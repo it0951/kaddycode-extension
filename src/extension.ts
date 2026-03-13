@@ -1,26 +1,28 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { chatCommand } from './commands/chatCommand';
+import { indexCurrentFile, searchCode } from './commands/indexCommand';
+import { internalClient } from './api/internalClient';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	console.log('UstraCode 활성화됨');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "ustracode-extension" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('ustracode-extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from UstraCode!');
+	// 서버 상태 확인
+	internalClient.health().then(isHealthy => {
+		if (isHealthy) {
+			vscode.window.showInformationMessage('✅ UstraCode: Internal Server 연결됨');
+		} else {
+			vscode.window.showWarningMessage('⚠️ UstraCode: Internal Server 연결 안됨. 서버를 시작하세요.');
+		}
 	});
 
-	context.subscriptions.push(disposable);
+	// 명령어 등록
+	const commands = [
+		vscode.commands.registerCommand('ustracode.chat', chatCommand),
+		vscode.commands.registerCommand('ustracode.indexCurrentFile', indexCurrentFile),
+		vscode.commands.registerCommand('ustracode.searchCode', searchCode),
+	];
+
+	context.subscriptions.push(...commands);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
