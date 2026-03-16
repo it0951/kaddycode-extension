@@ -29,7 +29,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
                 case 'sendMessage':
-                    await this._handleChat(message.text, message.provider);
+                    await this._handleChat(message.text, message.provider, message.model);
                     break;
                 case 'indexFile':
                     await this._handleIndexFile();
@@ -46,7 +46,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private async _handleChat(text: string, provider: string) {
+    private async _handleChat(text: string, provider: string, model?: string) {
         if (!text.trim()) return;
 
         this._selectedProvider = provider || 'ollama';
@@ -80,7 +80,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 userId: 'vscode-user',
                 message: contextText,
                 provider: this._selectedProvider,
-                model: this._selectedProvider === 'ollama' ? 'qwen2.5-coder:14b' : undefined,
+                model: model,
                 useRag: true,
                 ragLimit: 3,
                 ragScoreThreshold: 0.5
