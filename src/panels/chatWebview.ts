@@ -40,16 +40,17 @@ export function getWebviewContent(): string {
     }
 
         .logo-badge {
-        width: 22px;
-        height: 22px;
+        width: 24px;
+        height: 24px;
         background: #1E6FFF;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
         color: white;
+        letter-spacing: -0.5px;
     }
 
         .logo-text {
@@ -335,7 +336,7 @@ export function getWebviewContent(): string {
     <div class="header">
         <div class="header-top">
             <div class="logo">
-                <div class="logo-badge">U</div>
+                <div class="logo-badge">U.</div>
                 <span class="logo-text">UstraCode</span>
             </div>
             <div class="status-dot" id="statusDot" title="서버 상태"></div>
