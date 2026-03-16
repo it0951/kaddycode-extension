@@ -12,6 +12,24 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ustracode-sidebar",
+          "title": "UstraCode",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ustracode-sidebar": [
+        {
+          "type": "webview",
+          "id": "ustracode.chatView",
+          "name": "AI Chat"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "ustracode.chat",
@@ -24,6 +42,11 @@
       {
         "command": "ustracode.searchCode",
         "title": "UstraCode: 코드 검색"
+      },
+      {
+        "command": "ustracode.openChat",
+        "title": "UstraCode: 채팅 열기",
+        "icon": "$(comment-discussion)"
       }
     ],
     "menus": {
@@ -31,6 +54,13 @@
         { "command": "ustracode.chat", "group": "ustracode@1" },
         { "command": "ustracode.indexCurrentFile", "group": "ustracode@2" },
         { "command": "ustracode.searchCode", "group": "ustracode@3" }
+      ],
+      "view/title": [
+        {
+          "command": "ustracode.indexCurrentFile",
+          "when": "view == ustracode.chatView",
+          "group": "navigation"
+        }
       ]
     }
   },

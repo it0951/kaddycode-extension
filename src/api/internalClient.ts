@@ -5,10 +5,11 @@ import axios, { AxiosInstance } from 'axios';
 export interface ChatRequest {
     userId: string;
     message: string;
-    model?: string;               // 기본값: qwen2.5-coder:7b
-    useRag?: boolean;             // RAG 사용 여부 (기본 true)
-    ragLimit?: number;            // RAG 검색 결과 수 (기본 3)
-    ragScoreThreshold?: number;   // RAG score 임계값 (기본 0.5)
+    provider?: string;            // ollama / openai / claude / gemini
+    model?: string;
+    useRag?: boolean;
+    ragLimit?: number;
+    ragScoreThreshold?: number;
 }
 
 export interface VectorIndexRequest {

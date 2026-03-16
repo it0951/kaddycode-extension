@@ -1,28 +1,31 @@
 import * as vscode from 'vscode';
-import { chatCommand } from './commands/chatCommand';
+import { ChatViewProvider } from './panels/ChatPanel';
 import { indexCurrentFile, searchCode } from './commands/indexCommand';
-import { internalClient } from './api/internalClient';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('UstraCode 활성화됨');
 
-	// 서버 상태 확인
-	internalClient.health().then(isHealthy => {
-		if (isHealthy) {
-			vscode.window.showInformationMessage('✅ UstraCode: Internal Server 연결됨');
-		} else {
-			vscode.window.showWarningMessage('⚠️ UstraCode: Internal Server 연결 안됨. 서버를 시작하세요.');
-		}
-	});
+	// 사이드바 WebView 프로바이더 등록
+	const provider = new ChatViewProvider(context.extensionUri);
 
-	// 명령어 등록
-	const commands = [
-		vscode.commands.registerCommand('ustracode.chat', chatCommand),
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			ChatViewProvider.viewType,
+			provider
+		)
+	);
+
+	// 기존 명령어 유지 (컨텍스트 메뉴용)
+	context.subscriptions.push(
+		vscode.commands.registerCommand('ustracode.chat', () => {
+			vscode.commands.executeCommand('ustracode.chatView.focus');
+		}),
 		vscode.commands.registerCommand('ustracode.indexCurrentFile', indexCurrentFile),
 		vscode.commands.registerCommand('ustracode.searchCode', searchCode),
-	];
-
-	context.subscriptions.push(...commands);
+		vscode.commands.registerCommand('ustracode.openChat', () => {
+			vscode.commands.executeCommand('ustracode.chatView.focus');
+		})
+	);
 }
 
 export function deactivate() {}
