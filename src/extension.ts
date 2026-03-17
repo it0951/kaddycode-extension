@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 		)
 	);
 
-	// 기존 명령어 유지 (컨텍스트 메뉴용)
+	// 명령어 등록
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ustracode.chat', () => {
 			vscode.commands.executeCommand('ustracode.chatView.focus');
@@ -24,6 +24,11 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('ustracode.searchCode', searchCode),
 		vscode.commands.registerCommand('ustracode.openChat', () => {
 			vscode.commands.executeCommand('ustracode.chatView.focus');
+		}),
+		vscode.commands.registerCommand('ustracode.openSettings', () => {
+			vscode.commands.executeCommand(
+				'workbench.action.openSettings', 'ustracode'
+			);
 		})
 	);
 }

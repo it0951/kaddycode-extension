@@ -7,7 +7,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'ustracode.chatView';
     private _view?: vscode.WebviewView;
     private _chatHistory: { role: string; content: string }[] = [];
-    private _selectedProvider: string = 'ollama';
 
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -39,69 +38,72 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this._postMessage({ command: 'clearHistory' });
                     break;
                 case 'ready':
-                    // WebView 로드 완료 시 서버 상태 전송
                     await this._checkServerHealth();
+                    await this._sendCurrentSettings();
                     break;
+                case 'verifyApiKey':
+                    await this._handleVerifyApiKey();
+                    break;
+                case 'openSettings':
+                    vscode.commands.executeCommand(
+                        'workbench.action.openSettings', 'ustracode'
+                    );
+                    break;
+            }
+        });
+
+        // VS Code 설정 변경 감지 → WebView 즉시 반영
+        vscode.workspace.onDidChangeConfiguration(async (e) => {
+            if (e.affectsConfiguration('ustracode')) {
+                await this._sendCurrentSettings();
+                await this._checkServerHealth();
             }
         });
     }
 
-    private async _handleChat(text: string, provider: string, model?: string) {
-        if (!text.trim()) return;
+    private async _handleChat(text: string, provider?: string, model?: string) {
+        if (!text.trim()) { return; }
 
-        this._selectedProvider = provider || 'ollama';
-
-        // 사용자 메시지 히스토리 추가
         this._chatHistory.push({ role: 'user', content: text });
-
-        // UI에 사용자 메시지 즉시 표시
-        this._postMessage({
-            command: 'addMessage',
-            role: 'user',
-            content: text
-        });
-
-        // 로딩 표시
+        this._postMessage({ command: 'addMessage', role: 'user', content: text });
         this._postMessage({ command: 'setLoading', value: true });
 
         try {
-            // 현재 열린 파일 컨텍스트 추가
             const editor = vscode.window.activeTextEditor;
             let contextText = text;
             if (editor) {
-                const selection = editor.selection;
-                const selectedText = editor.document.getText(selection);
+                const selectedText = editor.document.getText(editor.selection);
                 if (selectedText) {
                     contextText = `[선택된 코드]\n\`\`\`\n${selectedText}\n\`\`\`\n\n[질문]\n${text}`;
                 }
             }
 
+            const settings = internalClient.getSettings();
             const chatResponse = await internalClient.chat({
                 userId: 'vscode-user',
                 message: contextText,
-                provider: this._selectedProvider,
-                model: model,
-                useRag: true,
+                provider: provider || settings.defaultProvider,
+                model:    model    || settings.defaultModel,
+                useRag:   settings.ragEnabled,
                 ragLimit: 3,
-                ragScoreThreshold: 0.5
+                ragScoreThreshold: 0.5,
             });
-            const response = chatResponse.message;
 
-            // AI 응답 히스토리 추가
-            this._chatHistory.push({ role: 'assistant', content: response });
-
-            // UI에 AI 응답 표시
+            this._chatHistory.push({ role: 'assistant', content: chatResponse.message });
             this._postMessage({
                 command: 'addMessage',
                 role: 'assistant',
-                content: response
+                content: chatResponse.message,
+                ragUsed: chatResponse.ragUsed,
+                references: chatResponse.references,
+                model: chatResponse.model,  // 추가
             });
 
         } catch (error: any) {
             this._postMessage({
                 command: 'addMessage',
                 role: 'error',
-                content: `❌ 오류: ${error.message || '서버 연결 실패'}`
+                content: `❌ 오류: ${error.message || '서버 연결 실패'}`,
             });
         } finally {
             this._postMessage({ command: 'setLoading', value: false });
@@ -112,46 +114,60 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             this._postMessage({
-                command: 'addMessage',
-                role: 'system',
-                content: '⚠️ 열린 파일이 없습니다.'
+                command: 'addMessage', role: 'system',
+                content: '⚠️ 열린 파일이 없습니다.',
             });
             return;
         }
 
-        const filePath = editor.document.fileName;
+        const filePath    = editor.document.fileName;
         const fileContent = editor.document.getText();
-
         this._postMessage({ command: 'setLoading', value: true });
 
         try {
             await internalClient.indexCode({
-                id: filePath,
-                code: fileContent,
-                filePath: filePath,
-                language: filePath.split('.').pop() || 'unknown'
+                id: filePath, code: fileContent, filePath,
+                language: filePath.split('.').pop() || 'unknown',
             });
             this._postMessage({
-                command: 'addMessage',
-                role: 'system',
-                content: `✅ 인덱싱 완료: ${filePath.split('\\').pop()}`
+                command: 'addMessage', role: 'system',
+                content: `✅ 인덱싱 완료: ${filePath.split('\\').pop()}`,
             });
         } catch (error: any) {
             this._postMessage({
-                command: 'addMessage',
-                role: 'error',
-                content: `❌ 인덱싱 실패: ${error.message}`
+                command: 'addMessage', role: 'error',
+                content: `❌ 인덱싱 실패: ${error.message}`,
             });
         } finally {
             this._postMessage({ command: 'setLoading', value: false });
         }
     }
 
+    private async _handleVerifyApiKey() {
+        this._postMessage({ command: 'setVerifying', value: true });
+        const result = await internalClient.verifyApiKey();
+        this._postMessage({
+            command: 'setApiKeyStatus',
+            valid: result.valid,
+            tenantName: result.tenantName,
+        });
+        this._postMessage({ command: 'setVerifying', value: false });
+    }
+
     private async _checkServerHealth() {
         const isHealthy = await internalClient.health();
+        this._postMessage({ command: 'setServerStatus', healthy: isHealthy });
+    }
+
+    private async _sendCurrentSettings() {
+        const s = internalClient.getSettings();
         this._postMessage({
-            command: 'setServerStatus',
-            healthy: isHealthy
+            command: 'updateSettings',
+            serverUrl:       s.serverUrl,
+            apiKey:          s.apiKey,
+            defaultProvider: s.defaultProvider,
+            defaultModel:    s.defaultModel,
+            ragEnabled:      s.ragEnabled,
         });
     }
 

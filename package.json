@@ -30,6 +30,37 @@
         }
       ]
     },
+    "configuration": {
+      "title": "UstraCode",
+      "properties": {
+        "ustracode.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8081",
+          "description": "UstraCode Internal Server URL"
+        },
+        "ustracode.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "테넌트 API Key (Backoffice에서 발급)"
+        },
+        "ustracode.defaultProvider": {
+          "type": "string",
+          "default": "ollama",
+          "enum": ["ollama", "openai", "claude", "gemini"],
+          "description": "기본 AI 프로바이더"
+        },
+        "ustracode.defaultModel": {
+          "type": "string",
+          "default": "qwen2.5-coder:14b",
+          "description": "기본 AI 모델명"
+        },
+        "ustracode.ragEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "RAG 컨텍스트 사용 여부"
+        }
+      }
+    },
     "commands": [
       {
         "command": "ustracode.chat",
@@ -47,6 +78,11 @@
         "command": "ustracode.openChat",
         "title": "UstraCode: 채팅 열기",
         "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "ustracode.openSettings",
+        "title": "UstraCode: 설정 열기",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -58,6 +94,11 @@
       "view/title": [
         {
           "command": "ustracode.indexCurrentFile",
+          "when": "view == ustracode.chatView",
+          "group": "navigation"
+        },
+        {
+          "command": "ustracode.openSettings",
           "when": "view == ustracode.chatView",
           "group": "navigation"
         }
