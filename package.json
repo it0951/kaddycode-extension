@@ -43,6 +43,11 @@
           "default": "",
           "description": "테넌트 API Key (Backoffice에서 발급)"
         },
+        "ustracode.userId": {
+          "type": "string",
+          "default": "",
+          "description": "사용자 ID (미입력 시 VS Code 머신 ID 자동 사용)"
+        },
         "ustracode.defaultProvider": {
           "type": "string",
           "default": "ollama",

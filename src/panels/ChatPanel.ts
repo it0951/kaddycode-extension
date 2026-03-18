@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { internalClient } from '../api/internalClient';
+import { internalClient, getUserId } from '../api/internalClient';
 import { getWebviewContent } from './chatWebview';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
@@ -24,7 +24,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.html = getWebviewContent();
 
-        // WebView → Extension 메시지 수신
         webviewView.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
                 case 'sendMessage':
@@ -52,7 +51,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // VS Code 설정 변경 감지 → WebView 즉시 반영
         vscode.workspace.onDidChangeConfiguration(async (e) => {
             if (e.affectsConfiguration('ustracode')) {
                 await this._sendCurrentSettings();
@@ -80,30 +78,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
             const settings = internalClient.getSettings();
             const chatResponse = await internalClient.chat({
-                userId: 'vscode-user',
-                message: contextText,
-                provider: provider || settings.defaultProvider,
-                model:    model    || settings.defaultModel,
-                useRag:   settings.ragEnabled,
-                ragLimit: 3,
+                userId:            getUserId(),   // ← 하드코딩 제거
+                message:           contextText,
+                provider:          provider || settings.defaultProvider,
+                model:             model    || settings.defaultModel,
+                useRag:            settings.ragEnabled,
+                ragLimit:          3,
                 ragScoreThreshold: 0.5,
-                bypassCache: bypassCache || false,
+                bypassCache:       bypassCache || false,
             });
 
             this._chatHistory.push({ role: 'assistant', content: chatResponse.message });
             this._postMessage({
-                command: 'addMessage',
-                role: 'assistant',
-                content: chatResponse.message,
-                ragUsed: chatResponse.ragUsed,
+                command:    'addMessage',
+                role:       'assistant',
+                content:    chatResponse.message,
+                ragUsed:    chatResponse.ragUsed,
                 references: chatResponse.references,
-                model: chatResponse.model,  // 추가
+                model:      chatResponse.model,
             });
 
         } catch (error: any) {
             this._postMessage({
                 command: 'addMessage',
-                role: 'error',
+                role:    'error',
                 content: `❌ 오류: ${error.message || '서버 연결 실패'}`,
             });
         } finally {
@@ -148,8 +146,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this._postMessage({ command: 'setVerifying', value: true });
         const result = await internalClient.verifyApiKey();
         this._postMessage({
-            command: 'setApiKeyStatus',
-            valid: result.valid,
+            command:    'setApiKeyStatus',
+            valid:      result.valid,
             tenantName: result.tenantName,
         });
         this._postMessage({ command: 'setVerifying', value: false });
@@ -163,9 +161,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async _sendCurrentSettings() {
         const s = internalClient.getSettings();
         this._postMessage({
-            command: 'updateSettings',
+            command:         'updateSettings',
             serverUrl:       s.serverUrl,
             apiKey:          s.apiKey,
+            userId:          s.userId,        // ← 추가
             defaultProvider: s.defaultProvider,
             defaultModel:    s.defaultModel,
             ragEnabled:      s.ragEnabled,
@@ -177,7 +176,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             this._view.webview.postMessage(message);
         }
     }
-    // 외부에서 코드를 채팅 입력창으로 전송하는 메서드
+
     public sendCodeToChat(message: string) {
         this._postMessage({ command: 'setInputText', text: message });
     }

@@ -68,17 +68,29 @@ function getConfig() {
     return {
         serverUrl:       cfg.get<string>('serverUrl', 'http://localhost:8081'),
         apiKey:          cfg.get<string>('apiKey', ''),
+        userId:          cfg.get<string>('userId', ''),
         defaultProvider: cfg.get<string>('defaultProvider', 'ollama'),
         defaultModel:    cfg.get<string>('defaultModel', 'qwen2.5-coder:14b'),
         ragEnabled:      cfg.get<boolean>('ragEnabled', true),
     };
 }
 
+// ── userId 결정 로직 ───────────────────────────────────────────────────────
+// 우선순위: 1) 사용자 설정값 2) VS Code machineId (고유 머신 ID)
+
+export function getUserId(): string {
+    const { userId } = getConfig();
+    if (userId && userId.trim() !== '') {
+        return userId.trim();
+    }
+    // VS Code 고유 머신 ID (설치마다 다른 UUID)
+    return vscode.env.machineId;
+}
+
 // ── 클라이언트 ─────────────────────────────────────────────────────────────
 
 export class InternalClient {
 
-    // 설정이 바뀔 때마다 새 AxiosInstance를 만들어 반환
     private _buildClient(): AxiosInstance {
         const { serverUrl, apiKey } = getConfig();
 
@@ -101,12 +113,12 @@ export class InternalClient {
         const { defaultProvider, defaultModel, ragEnabled } = getConfig();
 
         const payload: ChatRequest = {
-            useRag:             ragEnabled,
-            ragLimit:           3,
-            ragScoreThreshold:  0.5,
-            provider:           defaultProvider,
-            model:              defaultModel,
-            ...request,   // 호출 측 값으로 덮어씀
+            useRag:            ragEnabled,
+            ragLimit:          3,
+            ragScoreThreshold: 0.5,
+            provider:          defaultProvider,
+            model:             defaultModel,
+            ...request,
         };
 
         const response = await this._buildClient().post<ChatResponse>(
@@ -140,7 +152,6 @@ export class InternalClient {
         }
     }
 
-    // 테넌트 API Key 유효성 검증
     async verifyApiKey(): Promise<{ valid: boolean; tenantName?: string }> {
         const { apiKey } = getConfig();
         if (!apiKey || apiKey.trim() === '') {
@@ -156,9 +167,8 @@ export class InternalClient {
         }
     }
 
-    // 현재 설정값 반환 (UI 표시용)
     getSettings() {
-        return getConfig();
+        return { ...getConfig(), userId: getUserId() };
     }
 }
 
