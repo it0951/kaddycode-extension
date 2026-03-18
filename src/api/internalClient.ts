@@ -11,6 +11,7 @@ export interface ChatRequest {
     useRag?: boolean;
     ragLimit?: number;
     ragScoreThreshold?: number;
+    bypassCache?: boolean;
 }
 
 export interface VectorIndexRequest {

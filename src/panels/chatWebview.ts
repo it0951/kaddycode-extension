@@ -231,7 +231,8 @@ export function getWebviewContent(): string {
 <div class="action-row">
   <button class="btn-action primary" id="btnIndexFile">📂 파일 인덱싱</button>
   <button class="btn-action" id="btnExplain">💡 코드 설명</button>
-  <button class="btn-action" id="btnReview">🔍 코드 리뷰</button>
+  <button class="btn-action" id="btnReview">● 코드 리뷰</button>
+  <button class="btn-action" id="btnBypassCache" title="캐시를 무시하고 AI에게 직접 질문">🔄 캐시 무시</button>
 </div>
 
 <div class="chat-container" id="chatContainer">
@@ -273,6 +274,7 @@ var currentSettings = {
   defaultModel: 'qwen2.5-coder:7b',
   ragEnabled: true
 };
+var bypassCache = false;  // ← 추가
 
 window.addEventListener('message', function(e) {
   var msg = e.data;
@@ -363,7 +365,7 @@ function sendMessage() {
   var provider=document.getElementById('providerSelect').value;
   var model=document.getElementById('modelSelect').value;
   if (!text) { return; }
-  vscode.postMessage({command:'sendMessage',text:text,provider:provider,model:model});
+  vscode.postMessage({command:'sendMessage',text:text,provider:provider,model:model,bypassCache:bypassCache});
   msgInput.value=''; msgInput.style.height='auto';
 }
 
@@ -387,6 +389,21 @@ document.getElementById('btnExplain').addEventListener('click', function(){
 document.getElementById('btnReview').addEventListener('click', function(){
   var provider=document.getElementById('providerSelect').value, model=document.getElementById('modelSelect').value;
   vscode.postMessage({command:'sendMessage',text:'선택한 코드를 리뷰하고 개선 사항을 알려주세요.',provider:provider,model:model});
+});
+document.getElementById('btnBypassCache').addEventListener('click', function() {
+  bypassCache = !bypassCache;
+  var btn = document.getElementById('btnBypassCache');
+  if (bypassCache) {
+    btn.textContent = '🔄 캐시 무시 ON';
+    btn.style.background = '#FF6B3522';
+    btn.style.borderColor = '#FF6B35';
+    btn.style.color = '#FF6B35';
+  } else {
+    btn.textContent = '🔄 캐시 무시';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
 });
 document.getElementById('providerSelect').addEventListener('change', onProviderChange);
 

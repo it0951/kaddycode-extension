@@ -28,7 +28,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(async (message) => {
             switch (message.command) {
                 case 'sendMessage':
-                    await this._handleChat(message.text, message.provider, message.model);
+                    await this._handleChat(message.text, message.provider, message.model, message.bypassCache);
                     break;
                 case 'indexFile':
                     await this._handleIndexFile();
@@ -61,7 +61,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private async _handleChat(text: string, provider?: string, model?: string) {
+    private async _handleChat(text: string, provider?: string, model?: string, bypassCache?: boolean) {
         if (!text.trim()) { return; }
 
         this._chatHistory.push({ role: 'user', content: text });
@@ -87,6 +87,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 useRag:   settings.ragEnabled,
                 ragLimit: 3,
                 ragScoreThreshold: 0.5,
+                bypassCache: bypassCache || false,
             });
 
             this._chatHistory.push({ role: 'assistant', content: chatResponse.message });
