@@ -301,6 +301,12 @@ window.addEventListener('message', function(e) {
       chatContainer.appendChild(welcome);
       welcome.style.display = 'block';
       break;
+    case 'setInputText':
+        msgInput.value = msg.text;
+        msgInput.style.height = 'auto';
+        msgInput.style.height = Math.min(msgInput.scrollHeight, 100) + 'px';
+        msgInput.focus();
+        break;
   }
 });
 
@@ -364,7 +370,7 @@ function sendMessage() {
 function onProviderChange() {
   var provider=document.getElementById('providerSelect').value;
   var modelSelect=document.getElementById('modelSelect');
-  var models={ollama:['qwen2.5-coder:14b','qwen2.5-coder:7b','qwen2.5-coder:1.5b'],openai:['gpt-4o','gpt-4o-mini','gpt-3.5-turbo'],claude:['claude-sonnet-4-20250514','claude-haiku-4-5-20251001'],gemini:['gemini-2.0-flash','gemini-1.5-pro']};
+  var models={ollama:['qwen2.5-coder:14b','qwen2.5-coder:7b','qwen2.5-coder:1.5b'],openai:['gpt-4o','gpt-4o-mini','gpt-3.5-turbo'],claude:['claude-sonnet-4-6','claude-haiku-4-5-20251001'],gemini:['gemini-2.5-flash','gemini-1.5-pro','gemini-2.0-flash']};
   modelSelect.innerHTML=(models[provider]||[]).map(function(m){return'<option value="'+m+'">'+m+'</option>';}).join('');
 }
 

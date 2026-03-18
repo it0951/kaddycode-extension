@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": true,
           "description": "RAG 컨텍스트 사용 여부"
+        },
+        "ustracode.autoIndexOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "파일 저장 시 자동으로 RAG 인덱싱 (API Key 설정 필요)"
         }
       }
     },

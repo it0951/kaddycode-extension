@@ -176,4 +176,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             this._view.webview.postMessage(message);
         }
     }
+    // 외부에서 코드를 채팅 입력창으로 전송하는 메서드
+    public sendCodeToChat(message: string) {
+        this._postMessage({ command: 'setInputText', text: message });
+    }
 }

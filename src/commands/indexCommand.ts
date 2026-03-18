@@ -67,15 +67,38 @@ export async function searchCode() {
     `).join('');
 
         panel.webview.html = `
-      <!DOCTYPE html>
-      <html>
-      <body style="font-family: sans-serif; padding: 20px;">
-        <h3>🔍 검색어: "${query}"</h3>
-        <p>검색 결과 ${results.length}개</p>
-        ${resultHtml}
-      </body>
-      </html>
-    `;
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+        <meta charset="UTF-8"/>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; background: #1e1e2e; color: #cdd6f4; }
+          h3 { color: #89b4fa; margin-bottom: 4px; }
+          .meta { color: #6c7086; font-size: 12px; margin-bottom: 16px; }
+          .card { background: #2a2a3e; border: 1px solid #313244; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+          .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+          .score { background: #1E6FFF33; color: #60a5fa; border: 1px solid #1E6FFF55; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+          .lang  { background: #a78bfa22; color: #a78bfa; border: 1px solid #a78bfa44; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+          .path  { color: #6c7086; font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          pre { background: #181825; border: 1px solid #313244; border-radius: 6px; padding: 10px; overflow-x: auto; font-size: 12px; line-height: 1.5; color: #cdd6f4; margin: 0; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+          .empty { text-align: center; padding: 40px; color: #6c7086; }
+        </style>
+        </head>
+        <body>
+          <h3>🔍 "${query}"</h3>
+          <div class="meta">검색 결과 ${results.length}개</div>
+          ${results.map((r, i) => `
+            <div class="card">
+              <div class="card-header">
+                <span class="score">${(r.score * 100).toFixed(1)}% 일치</span>
+                <span class="lang">${r.language}</span>
+                <span class="path" title="${r.filePath}">${r.filePath.replace(/\\\\/g, '/').split('/').pop()}</span>
+              </div>
+              <pre>${r.code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+            </div>
+          `).join('')}
+        </body>
+        </html>`;
     } catch (error) {
         vscode.window.showErrorMessage('검색 실패. Internal Server를 확인하세요.');
     }
