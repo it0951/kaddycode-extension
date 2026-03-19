@@ -285,7 +285,12 @@ window.addEventListener('message', function(e) {
       document.getElementById('providerSelect').value = msg.defaultProvider || 'ollama';
       updateApiKeyBadge(msg.apiKey);
       break;
-    case 'setApiKeyStatus':   updateTenantStatus(msg.valid, msg.tenantName); break;
+    case 'setApiKeyStatus':
+    updateTenantStatus(msg.valid, msg.tenantName);
+    if (msg.valid && msg.apiKeys && msg.apiKeys.length > 0) {
+        updateProviderModels(msg.apiKeys, msg.activeProviders);
+    }
+    break;
     case 'setVerifying':
       btnVerify.disabled = msg.value;
       btnVerify.textContent = msg.value ? '검증 중...' : '검증';
@@ -333,6 +338,53 @@ function updateTenantStatus(valid, tenantName) {
   var badge=document.getElementById('tenantBadge'), dot=document.getElementById('tenantDot'), text=document.getElementById('tenantText'), info=document.getElementById('tenantInfo');
   if (valid) { badge.className='badge tenant-ok'; dot.className='dot blue'; text.textContent=tenantName||'테넌트 인증됨'; info.innerHTML='테넌트: <span>'+(tenantName||'-')+'</span> · 인증 완료 ✓'; }
   else       { badge.className='badge tenant-err'; dot.className='dot yellow'; text.textContent='API Key 오류'; info.textContent='유효하지 않은 API Key입니다.'; }
+}
+
+function updateProviderModels(apiKeys, activeProviders) {
+    var providerSelect = document.getElementById('providerSelect');
+    var modelSelect = document.getElementById('modelSelect');
+
+    // Provider 드롭다운 갱신
+    providerSelect.innerHTML = '';
+    var providerIcons = { OLLAMA: '🖥', OPENAI: '🟢', CLAUDE: '🟣', GEMINI: '🔵' };
+    (activeProviders || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.toLowerCase();
+        opt.textContent = (providerIcons[p] || '🤖') + ' ' + p;
+        providerSelect.appendChild(opt);
+    });
+
+    // 첫 번째 Provider 선택 시 모델 갱신
+    if (activeProviders && activeProviders.length > 0) {
+        var firstProvider = activeProviders[0].toUpperCase();
+        providerSelect.value = firstProvider.toLowerCase();
+        updateModelsByProvider(firstProvider, apiKeys);
+    }
+
+    // Provider 변경 이벤트 재등록
+    providerSelect.onchange = function() {
+        var selected = providerSelect.value.toUpperCase();
+        updateModelsByProvider(selected, apiKeys);
+    };
+}
+
+function updateModelsByProvider(provider, apiKeys) {
+    var modelSelect = document.getElementById('modelSelect');
+    modelSelect.innerHTML = '';
+    // apiKeys에서 해당 Provider의 모델 찾기
+    var matchedKeys = (apiKeys || []).filter(function(k) {
+        return k.provider.toUpperCase() === provider && k.active;
+    });
+    if (matchedKeys.length > 0) {
+        matchedKeys.forEach(function(k) {
+            if (k.model) {
+                var opt = document.createElement('option');
+                opt.value = k.model;
+                opt.textContent = k.model;
+                modelSelect.appendChild(opt);
+            }
+        });
+    }
 }
 
 function addMessage(role, content, ragUsed, references, model) {

@@ -55,10 +55,25 @@ export interface HealthResponse {
     qdrant: string;
 }
 
-export interface TenantInfo {
-    name: string;
+// TenantApiKeyInfo 인터페이스 추가
+export interface TenantApiKeyInfo {
+    id: number;
+    provider: string;
     apiKey: string;
+    apiUrl: string;
+    model: string;
     active: boolean;
+}
+
+// TenantInfo 인터페이스 교체
+export interface TenantInfo {
+    tenantId: number;
+    name: string;
+    active: boolean;
+    aiProvider: string;
+    aiModel: string;
+    apiKeys: TenantApiKeyInfo[];
+    activeProviders: string[];
 }
 
 // ── 설정 읽기 헬퍼 ─────────────────────────────────────────────────────────
@@ -152,7 +167,7 @@ export class InternalClient {
         }
     }
 
-    async verifyApiKey(): Promise<{ valid: boolean; tenantName?: string }> {
+    async verifyApiKey(): Promise<{ valid: boolean; tenantName?: string; tenantInfo?: TenantInfo }> {
         const { apiKey } = getConfig();
         if (!apiKey || apiKey.trim() === '') {
             return { valid: false };
@@ -161,7 +176,11 @@ export class InternalClient {
             const response = await this._buildClient().post<TenantInfo>(
                 '/api/v1/tenant/verify'
             );
-            return { valid: response.data.active, tenantName: response.data.name };
+            return {
+                valid: response.data.active,
+                tenantName: response.data.name,
+                tenantInfo: response.data,
+            };
         } catch {
             return { valid: false };
         }

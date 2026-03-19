@@ -145,11 +145,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async _handleVerifyApiKey() {
         this._postMessage({ command: 'setVerifying', value: true });
         const result = await internalClient.verifyApiKey();
+
         this._postMessage({
-            command:    'setApiKeyStatus',
-            valid:      result.valid,
-            tenantName: result.tenantName,
+            command:         'setApiKeyStatus',
+            valid:           result.valid,
+            tenantName:      result.tenantName,
+            apiKeys:         result.tenantInfo?.apiKeys || [],
+            activeProviders: result.tenantInfo?.activeProviders || [],
         });
+
         this._postMessage({ command: 'setVerifying', value: false });
     }
 
