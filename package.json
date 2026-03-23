@@ -2,98 +2,38 @@
   "name": "ustracode-extension",
   "displayName": "UstraCode",
   "description": "AI-powered coding assistant for enterprise",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.110.0"
-  },
+  "version": "0.1.0",
+  "publisher": "ustracode",
+  "engines": { "vscode": "^1.110.0" },
   "categories": ["Other"],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": ["*"],
   "contributes": {
     "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "ustracode-sidebar",
-          "title": "UstraCode",
-          "icon": "resources/icon.svg"
-        }
-      ]
+      "activitybar": [{ "id": "ustracode-sidebar", "title": "UstraCode", "icon": "resources/icon.svg" }]
     },
     "views": {
-      "ustracode-sidebar": [
-        {
-          "type": "webview",
-          "id": "ustracode.chatView",
-          "name": "AI Chat"
-        }
-      ]
+      "ustracode-sidebar": [{ "type": "webview", "id": "ustracode.chatView", "name": "AI Chat" }]
     },
     "configuration": {
       "title": "UstraCode",
       "properties": {
-        "ustracode.serverUrl": {
-          "type": "string",
-          "default": "http://localhost:8081",
-          "description": "UstraCode Internal Server URL"
-        },
-        "ustracode.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "테넌트 API Key (Backoffice에서 발급)"
-        },
-        "ustracode.userId": {
-          "type": "string",
-          "default": "",
-          "description": "사용자 ID (미입력 시 VS Code 머신 ID 자동 사용)"
-        },
-        "ustracode.defaultProvider": {
-          "type": "string",
-          "default": "ollama",
-          "enum": ["ollama", "openai", "claude", "gemini"],
-          "description": "기본 AI 프로바이더"
-        },
-        "ustracode.defaultModel": {
-          "type": "string",
-          "default": "qwen2.5-coder:14b",
-          "description": "기본 AI 모델명"
-        },
-        "ustracode.ragEnabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "RAG 컨텍스트 사용 여부"
-        },
-        "ustracode.autoIndexOnSave": {
-          "type": "boolean",
-          "default": false,
-          "description": "파일 저장 시 자동으로 RAG 인덱싱 (API Key 설정 필요)"
-        }
+        "ustracode.serverUrl": { "type": "string", "default": "http://localhost:8081", "description": "UstraCode Internal Server URL" },
+        "ustracode.email": { "type": "string", "default": "", "description": "Tenant email address" },
+        "ustracode.apiKey": { "type": "string", "default": "", "description": "Tenant API Key" },
+        "ustracode.userId": { "type": "string", "default": "", "description": "User ID" },
+        "ustracode.defaultProvider": { "type": "string", "default": "ollama", "enum": ["ollama","openai","claude","gemini"], "description": "Default AI provider" },
+        "ustracode.defaultModel": { "type": "string", "default": "qwen2.5-coder:14b", "description": "Default AI model" },
+        "ustracode.ragEnabled": { "type": "boolean", "default": true, "description": "Enable RAG context" },
+        "ustracode.autoIndexOnSave": { "type": "boolean", "default": false, "description": "Auto index on save" }
       }
     },
     "commands": [
-      {
-        "command": "ustracode.chat",
-        "title": "UstraCode: AI에게 질문하기"
-      },
-      {
-        "command": "ustracode.indexCurrentFile",
-        "title": "UstraCode: 현재 파일 인덱싱"
-      },
-      {
-        "command": "ustracode.searchCode",
-        "title": "UstraCode: 코드 검색"
-      },
-      {
-        "command": "ustracode.openChat",
-        "title": "UstraCode: 채팅 열기",
-        "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "ustracode.openSettings",
-        "title": "UstraCode: 설정 열기",
-        "icon": "$(settings-gear)"
-      }
+      { "command": "ustracode.chat", "title": "UstraCode: Ask AI" },
+      { "command": "ustracode.indexCurrentFile", "title": "UstraCode: Index Current File" },
+      { "command": "ustracode.searchCode", "title": "UstraCode: Search Code" },
+      { "command": "ustracode.openChat", "title": "UstraCode: Open Chat", "icon": "$(comment-discussion)" },
+      { "command": "ustracode.openSettings", "title": "UstraCode: Open Settings", "icon": "$(settings-gear)" }
     ],
     "menus": {
       "editor/context": [
@@ -102,16 +42,8 @@
         { "command": "ustracode.searchCode", "group": "ustracode@3" }
       ],
       "view/title": [
-        {
-          "command": "ustracode.indexCurrentFile",
-          "when": "view == ustracode.chatView",
-          "group": "navigation"
-        },
-        {
-          "command": "ustracode.openSettings",
-          "when": "view == ustracode.chatView",
-          "group": "navigation"
-        }
+        { "command": "ustracode.indexCurrentFile", "when": "view == ustracode.chatView", "group": "navigation" },
+        { "command": "ustracode.openSettings", "when": "view == ustracode.chatView", "group": "navigation" }
       ]
     }
   },
@@ -133,7 +65,5 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
   },
-  "dependencies": {
-    "axios": "^1.13.6"
-  }
+  "dependencies": { "axios": "^1.13.6" }
 }

@@ -55,7 +55,6 @@ export interface HealthResponse {
     qdrant: string;
 }
 
-// TenantApiKeyInfo 인터페이스 추가
 export interface TenantApiKeyInfo {
     id: number;
     provider: string;
@@ -65,7 +64,6 @@ export interface TenantApiKeyInfo {
     active: boolean;
 }
 
-// TenantInfo 인터페이스 교체
 export interface TenantInfo {
     tenantId: number;
     name: string;
@@ -82,6 +80,7 @@ function getConfig() {
     const cfg = vscode.workspace.getConfiguration('ustracode');
     return {
         serverUrl:       cfg.get<string>('serverUrl', 'http://localhost:8081'),
+        email:           cfg.get<string>('email', ''),           // ← 추가
         apiKey:          cfg.get<string>('apiKey', ''),
         userId:          cfg.get<string>('userId', ''),
         defaultProvider: cfg.get<string>('defaultProvider', 'ollama'),
@@ -91,14 +90,12 @@ function getConfig() {
 }
 
 // ── userId 결정 로직 ───────────────────────────────────────────────────────
-// 우선순위: 1) 사용자 설정값 2) VS Code machineId (고유 머신 ID)
 
 export function getUserId(): string {
     const { userId } = getConfig();
     if (userId && userId.trim() !== '') {
         return userId.trim();
     }
-    // VS Code 고유 머신 ID (설치마다 다른 UUID)
     return vscode.env.machineId;
 }
 
@@ -107,7 +104,7 @@ export function getUserId(): string {
 export class InternalClient {
 
     private _buildClient(): AxiosInstance {
-        const { serverUrl, apiKey } = getConfig();
+        const { serverUrl, email, apiKey } = getConfig();
 
         const headers: Record<string, string> = {
             'Content-Type': 'application/json; charset=utf-8',
@@ -115,6 +112,9 @@ export class InternalClient {
 
         if (apiKey && apiKey.trim() !== '') {
             headers['X-Tenant-API-Key'] = apiKey.trim();
+        }
+        if (email && email.trim() !== '') {
+            headers['X-Tenant-Email'] = email.trim();    // ← 추가
         }
 
         return axios.create({
@@ -168,8 +168,11 @@ export class InternalClient {
     }
 
     async verifyApiKey(): Promise<{ valid: boolean; tenantName?: string; tenantInfo?: TenantInfo }> {
-        const { apiKey } = getConfig();
+        const { apiKey, email } = getConfig();
         if (!apiKey || apiKey.trim() === '') {
+            return { valid: false };
+        }
+        if (!email || email.trim() === '') {
             return { valid: false };
         }
         try {
