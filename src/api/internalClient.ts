@@ -161,7 +161,7 @@ export class InternalClient {
     async health(): Promise<boolean> {
         try {
             const response = await this._buildClient().get<HealthResponse>('/api/v1/health');
-            return response.data.server === 'UP' && response.data.qdrant === 'UP';
+            return response.data.server === 'UP';
         } catch {
             return false;
         }
