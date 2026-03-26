@@ -2,11 +2,30 @@ import * as vscode from 'vscode';
 import { internalClient, getUserId } from '../api/internalClient';
 import { getWebviewContent } from './chatWebview';
 
+// CodeLens 액션 페이로드 타입
+export interface CodeLensActionPayload {
+    actionKey: string;       // 'explain' | 'fix' | 'ask' | 'doc'
+    label: string;           // UI 표시용 레이블
+    prompt: string;          // AI에 전송할 프롬프트
+    language: string;        // 프로그래밍 언어
+    originalCode: string;    // 원본 코드 (미사용 시 대비)
+    allowApply: boolean;     // [소스에 적용] 버튼 표시 여부 (fix/doc만 true)
+    applyRange?: vscode.Range; // 에디터 교체 범위
+}
+
 export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     public static readonly viewType = 'ustracode.chatView';
     private _view?: vscode.WebviewView;
     private _chatHistory: { role: string; content: string }[] = [];
+
+    // CodeLens fix/doc 응답 대기 상태 저장
+    private _pendingApply?: {
+        applyRange: vscode.Range;
+        lastAssistantMessage: string;
+    };
+    private _currentProvider: string = '';
+    private _currentModel: string = '';
 
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -34,6 +53,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'clearHistory':
                     this._chatHistory = [];
+                    this._pendingApply = undefined;
                     this._postMessage({ command: 'clearHistory' });
                     break;
                 case 'ready':
@@ -48,6 +68,33 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         'workbench.action.openSettings', 'ustracode'
                     );
                     break;
+
+                // ── CodeLens 적용 버튼 이벤트 ───────────────────────────
+                case 'applySelectedCode':
+                    await this._handleApplySelectedCode(message.code);
+                    break;
+                case 'syncProviderModel':
+                    this._currentProvider = message.provider || '';
+                    this._currentModel    = message.model    || '';
+                    break;
+                case 'executeCodeLensAction':
+                    this._postMessage({
+                        command: 'addMessage',
+                        role:    'system',
+                        content: `🔍 **${message.label}** (${message.language})`,
+                    });
+                    this._handleChat(
+                        message.prompt,
+                        message.provider,
+                        message.model,
+                        true,            // ← CodeLens는 항상 캐시 무시
+                        {
+                            allowApply: message.allowApply,
+                            applyRange: this._pendingApplyRange,
+                        }
+                    );
+                    this._pendingApplyRange = undefined;
+                    break;
             }
         });
 
@@ -59,7 +106,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    private async _handleChat(text: string, provider?: string, model?: string, bypassCache?: boolean) {
+    private async _handleChat(
+        text: string,
+        provider?: string,
+        model?: string,
+        bypassCache?: boolean,
+        // CodeLens 전용 옵션
+        codeLensOpts?: { allowApply: boolean; applyRange?: vscode.Range }
+    ) {
         if (!text.trim()) { return; }
 
         this._chatHistory.push({ role: 'user', content: text });
@@ -69,7 +123,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         try {
             const editor = vscode.window.activeTextEditor;
             let contextText = text;
-            if (editor) {
+
+            // 일반 채팅 시에만 선택 코드 자동 첨부 (CodeLens는 이미 프롬프트에 포함됨)
+            if (!codeLensOpts && editor) {
                 const selectedText = editor.document.getText(editor.selection);
                 if (selectedText) {
                     contextText = `[선택된 코드]\n\`\`\`\n${selectedText}\n\`\`\`\n\n[질문]\n${text}`;
@@ -78,7 +134,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
             const settings = internalClient.getSettings();
             const chatResponse = await internalClient.chat({
-                userId:            getUserId(),   // ← 하드코딩 제거
+                userId:            getUserId(),
                 message:           contextText,
                 provider:          provider || settings.defaultProvider,
                 model:             model    || settings.defaultModel,
@@ -88,17 +144,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 bypassCache:       bypassCache || false,
             });
 
-            this._chatHistory.push({ role: 'assistant', content: chatResponse.message });
+            const assistantMsg = chatResponse.message;
+            this._chatHistory.push({ role: 'assistant', content: assistantMsg });
+
             this._postMessage({
                 command:    'addMessage',
                 role:       'assistant',
-                content:    chatResponse.message,
+                content:    assistantMsg,
                 ragUsed:    chatResponse.ragUsed,
                 references: chatResponse.references,
                 model:      chatResponse.model,
             });
 
+            // Fix/Doc 응답 → [✅ 소스에 적용] 버튼 표시
+            if (codeLensOpts?.allowApply && codeLensOpts.applyRange) {
+                this._pendingApplyRange = codeLensOpts.applyRange;
+            }
+
         } catch (error: any) {
+            // 오류 시 pending apply 초기화 (이전 Fix 요청 잔재 제거)
+            this._pendingApply = undefined;
             this._postMessage({
                 command: 'addMessage',
                 role:    'error',
@@ -106,6 +171,41 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             });
         } finally {
             this._postMessage({ command: 'setLoading', value: false });
+        }
+    }
+
+    /**
+     * AI 응답에서 코드 블록 추출 후 에디터 해당 범위 교체
+     */
+    private async _handleApplySelectedCode(code: string) {
+        if (!code || !code.trim()) {
+            vscode.window.showWarningMessage('적용할 코드가 없습니다.');
+            return;
+        }
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('활성화된 에디터가 없습니다.');
+            return;
+        }
+        if (!this._pendingApplyRange) {
+            vscode.window.showWarningMessage('적용 범위를 찾을 수 없습니다. Fix 버튼을 다시 클릭해주세요.');
+            return;
+        }
+
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        workspaceEdit.replace(editor.document.uri, this._pendingApplyRange, code);
+        const success = await vscode.workspace.applyEdit(workspaceEdit);
+
+        if (success) {
+            this._pendingApplyRange = undefined;
+            this._postMessage({
+                command: 'addMessage',
+                role:    'system',
+                content: '✅ 코드가 에디터에 적용되었습니다.',
+            });
+            vscode.window.showInformationMessage('UstraCode: 코드가 적용되었습니다.');
+        } else {
+            vscode.window.showErrorMessage('코드 적용 실패. 에디터 상태를 확인해주세요.');
         }
     }
 
@@ -168,7 +268,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             command:         'updateSettings',
             serverUrl:       s.serverUrl,
             apiKey:          s.apiKey,
-            userId:          s.userId,        // ← 추가
+            userId:          s.userId,
             defaultProvider: s.defaultProvider,
             defaultModel:    s.defaultModel,
             ragEnabled:      s.ragEnabled,
@@ -181,7 +281,83 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    /** 기존 우클릭 → 채팅창 전송 */
     public sendCodeToChat(message: string) {
         this._postMessage({ command: 'setInputText', text: message });
     }
+
+    /**
+     * CodeLens 버튼 클릭 → 사이드바에 AI 응답 표시
+     * Fix/Doc인 경우 응답 후 [✅ 소스에 적용] 버튼 표시
+     */
+    public sendCodeLensAction(payload: CodeLensActionPayload) {
+        // 이전 pendingApply 초기화
+        this._pendingApply = undefined;
+
+        // WebView에 codeLens 액션 페이로드를 전달하고
+        // WebView가 현재 선택된 provider/model을 포함해서 응답하도록 요청
+        this._postMessage({
+            command:    'requestCodeLensAction',
+            payload:    {
+                actionKey:    payload.actionKey,
+                label:        payload.label,
+                prompt:       payload.prompt,
+                language:     payload.language,
+                originalCode: payload.originalCode,
+                allowApply:   payload.allowApply,
+                // applyRange은 직렬화 불가 → 별도 보관
+            }
+        });
+
+        // applyRange는 WebView에 못 보내므로 여기서 임시 보관
+        if (payload.allowApply && payload.applyRange) {
+            this._pendingApplyRange = payload.applyRange;
+        }
+    }
+
+    // applyRange 임시 보관용 필드 (sendCodeLensAction → executeCodeLensAction 간 전달)
+    private _pendingApplyRange?: vscode.Range;
+}
+
+// ── 헬퍼: AI 응답에서 코드 블록 추출 ─────────────────────────────────────
+/**
+ * 마크다운 응답에서 마지막 코드 블록을 추출.
+ * Fix/Doc 프롬프트에서 "수정된 전체 코드 블록을 마지막에 제공해주세요"라고
+ * 명시했으므로 마지막 블록이 적용 대상.
+ */
+function extractCodeFromMarkdown(markdown: string): string | null {
+    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)```/g;
+    const matches: string[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = codeBlockRegex.exec(markdown)) !== null) {
+        matches.push(match[1]);
+    }
+
+    if (matches.length === 0) { return null; }
+
+    const longest = matches.reduce((a, b) => a.length >= b.length ? a : b);
+    let code = longest.replace(/\n$/, '');
+
+    // import문 제거 (java/kotlin/ts/js)
+    code = code.replace(/^import\s+[\w.*{},'"\s]+;\s*\n/gm, '');
+    code = code.replace(/^import\s+[\w.*{},'"\s]+\n/gm, '');
+
+    // package 선언 제거 (java/kotlin)
+    code = code.replace(/^package\s+[\w.]+;\s*\n/gm, '');
+
+    // 클래스/인터페이스 래퍼 제거
+    // "public class Foo {" 로 시작하고 마지막 "}" 로 끝나는 경우
+    const classWrapperRegex = /^(?:public\s+|private\s+|protected\s+)?(?:class|interface|enum)\s+\w+[\s\S]*?\{([\s\S]*)\}\s*$/;
+    const classMatch = code.match(classWrapperRegex);
+    if (classMatch) {
+        // 클래스 바디만 추출 후 들여쓰기 제거
+        code = classMatch[1]
+            .split('\n')
+            .map(line => line.replace(/^    /, '')) // 4스페이스 들여쓰기 제거
+            .join('\n')
+            .trim();
+    }
+
+    return code.trim();
 }

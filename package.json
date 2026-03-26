@@ -25,7 +25,12 @@
         "ustracode.defaultProvider": { "type": "string", "default": "ollama", "enum": ["ollama","openai","claude","gemini"], "description": "Default AI provider" },
         "ustracode.defaultModel": { "type": "string", "default": "qwen2.5-coder:14b", "description": "Default AI model" },
         "ustracode.ragEnabled": { "type": "boolean", "default": true, "description": "Enable RAG context" },
-        "ustracode.autoIndexOnSave": { "type": "boolean", "default": false, "description": "Auto index on save" }
+        "ustracode.autoIndexOnSave": { "type": "boolean", "default": false, "description": "Auto index on save" },
+        "ustracode.codeLensEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CodeLens buttons on functions and classes"
+        }
       }
     },
     "commands": [
@@ -33,7 +38,13 @@
       { "command": "ustracode.indexCurrentFile", "title": "UstraCode: Index Current File" },
       { "command": "ustracode.searchCode", "title": "UstraCode: Search Code" },
       { "command": "ustracode.openChat", "title": "UstraCode: Open Chat", "icon": "$(comment-discussion)" },
-      { "command": "ustracode.openSettings", "title": "UstraCode: Open Settings", "icon": "$(settings-gear)" }
+      { "command": "ustracode.openSettings", "title": "UstraCode: Open Settings", "icon": "$(settings-gear)" },
+      { "command": "ustracode.codeLens.explain", "title": "UstraCode: Explain Code" },
+      { "command": "ustracode.codeLens.fix",     "title": "UstraCode: Fix / Refactor Code" },
+      { "command": "ustracode.codeLens.ask",     "title": "UstraCode: Ask AI about Code" },
+      { "command": "ustracode.codeLens.doc",     "title": "UstraCode: Generate Documentation" },
+      { "command": "ustracode.codeLens.open", "title": "UstraCode: Open Chat" },
+      { "command": "ustracode.codeLens.noop", "title": "UstraCode: Separator" }
     ],
     "menus": {
       "editor/context": [

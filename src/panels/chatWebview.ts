@@ -22,7 +22,7 @@ function buildParserScript(): string {
         '    var id="cb"+Math.random().toString(36).slice(2,7);',
         '    var lbl=lang||"code";',
         '    var esc=escapeHtml(code.trim());',
-        '    blocks.push(\'<div class="code-header"><span>\'+lbl+\'</span><button class="btn-copy" data-id="\'+id+\'">복사</button></div><pre id="\'+id+\'"><code>\'+esc+\'</code></pre>\');',
+        '    blocks.push(\'<div class="code-header"><span>\'+lbl+\'</span><div style="display:flex;gap:4px;"><button class="btn-apply-code" data-code="\'+encodeURIComponent(code.trim())+\'">✅ 적용</button><button class="btn-copy" data-id="\'+id+\'">복사</button></div></div><pre id="\'+id+\'"><code>\'+esc+\'</code></pre>\');',
         '    return "\\x00CODE"+(blocks.length-1)+"\\x00";',
         '  });',
 
@@ -96,7 +96,7 @@ export function getWebviewContent(): string {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--vscode-sideBar-background, #1e1e2e);
     color: var(--vscode-foreground, #cdd6f4);
-    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative;
   }
   .header { padding: 10px 12px 8px; border-bottom: 1px solid var(--vscode-panel-border, #313244); flex-shrink: 0; }
   .logo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -105,11 +105,25 @@ export function getWebviewContent(): string {
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    overflow: hidden;   /* ← 추가 */
+    overflow: hidden;
     }
   .logo-text { font-size: 13px; font-weight: 700; color: var(--vscode-foreground); letter-spacing: 0.3px; flex: 1; }
-  .btn-clear { padding: 2px 7px; background: transparent; color: var(--vscode-descriptionForeground, #9ca3af); border: 1px solid var(--vscode-panel-border, #313244); border-radius: 4px; font-size: 10px; cursor: pointer; }
-  .btn-clear:hover { background: var(--vscode-list-hoverBackground); color: var(--vscode-foreground); }
+  .btn-clear, .btn-help { 
+      padding: 4px 8px; 
+      background: var(--vscode-button-secondaryBackground, #2a2a3e); 
+      color: var(--vscode-button-secondaryForeground, #9ca3af); 
+      border: 1px solid var(--vscode-button-border, #313244); 
+      border-radius: 4px; 
+      font-size: 10px; 
+      font-weight: 600;
+      cursor: pointer; 
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .btn-clear:hover, .btn-help:hover { 
+      background: var(--vscode-button-secondaryHoverBackground, #374151); 
+      color: var(--vscode-foreground); 
+    }
   .status-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; flex-shrink: 0; }
   .badge.server-ok  { background: #1a3a1a; color: #4ade80; border: 1px solid #166534; }
@@ -132,6 +146,8 @@ export function getWebviewContent(): string {
   .provider-row select { flex: 1; background: var(--vscode-input-background, #2a2a3e); color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border, #313244); border-radius: 4px; padding: 4px 6px; font-size: 11px; outline: none; min-width: 0; }
   .action-row { display: flex; gap: 5px; padding: 5px 12px 6px; flex-shrink: 0; border-bottom: 1px solid var(--vscode-panel-border, #313244); }
   .btn-action { flex: 1; padding: 4px 6px; background: var(--vscode-input-background, #2a2a3e); color: var(--vscode-descriptionForeground, #9ca3af); border: 1px solid var(--vscode-panel-border, #313244); border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; text-align: center; white-space: nowrap; }
+  .btn-action.index { background: #1a2e1a; color: #4ade80; border-color: #166534; }
+  .btn-action.index:hover { background: #1E6FFF22; border-color: #1E6FFF; color: #60a5fa; }
   .btn-action:hover { background: #1E6FFF22; border-color: #1E6FFF; color: #60a5fa; }
   .btn-action.primary { background: #1E6FFF22; border-color: #1E6FFF55; color: #60a5fa; }
   .chat-container { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -144,7 +160,7 @@ export function getWebviewContent(): string {
   .msg.sys  .msg-label { color: #9ca3af; }
   .msg.err  .msg-label { color: #f87171; }
   .msg-bubble { padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.6; word-break: break-word; }
-  .msg.user .msg-bubble { background: #1e3a5f; border: 1px solid #1d4ed8; align-self: flex-end; max-width: 90%; white-space: pre-wrap; }
+  .msg.user .msg-bubble { background: var(--vscode-button-background, #1e3a5f); border: 1px solid var(--vscode-button-background, #1d4ed8); color: var(--vscode-button-foreground, #ffffff); align-self: flex-end; max-width: 90%; white-space: pre-wrap; }
   .msg.ai   .msg-bubble { background: var(--vscode-input-background, #2a2a3e); border: 1px solid var(--vscode-panel-border, #313244); }
   .msg.sys  .msg-bubble { background: transparent; border: 1px dashed #374151; color: #9ca3af; font-size: 11px; padding: 5px 8px; white-space: pre-wrap; }
   .msg.err  .msg-bubble { background: #3a1a1a; border: 1px solid #7f1d1d; color: #f87171; white-space: pre-wrap; }
@@ -161,6 +177,9 @@ export function getWebviewContent(): string {
   .code-header { display: flex; justify-content: space-between; align-items: center; background: #161b22; border: 1px solid #30363d; border-bottom: none; border-radius: 6px 6px 0 0; padding: 4px 10px; font-size: 10px; color: #8b949e; margin-top: 6px; }
   .btn-copy { background: transparent; border: none; color: #8b949e; cursor: pointer; font-size: 10px; padding: 1px 5px; border-radius: 3px; }
   .btn-copy:hover { background: #30363d; color: #e6edf3; } .btn-copy.copied { color: #4ade80; }
+  .btn-apply-code { background: #1E6FFF22; border: 1px solid #1E6FFF55; color: #60a5fa; cursor: pointer; font-size: 10px; padding: 1px 7px; border-radius: 3px; font-weight:600; display:none; }
+  .btn-apply-code:hover { background: #1E6FFF; color: #fff; }
+  .msg.ai .btn-apply-code { display:inline-block; }
   .msg-bubble blockquote { border-left: 3px solid #1E6FFF; padding-left: 10px; margin: 4px 0; color: #9ca3af; font-style: italic; }
   .msg-bubble hr { border: none; border-top: 1px solid #313244; margin: 8px 0; }
   .rag-badge { font-size: 10px; color: #4ade80; margin-top: 4px; }
@@ -173,7 +192,7 @@ export function getWebviewContent(): string {
   @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-4px);opacity:1} }
   .input-area { padding: 8px 12px 10px; border-top: 1px solid var(--vscode-panel-border, #313244); flex-shrink: 0; }
   .input-row { display: flex; gap: 6px; align-items: flex-end; }
-  textarea { flex: 1; background: var(--vscode-input-background, #2a2a3e); color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border, #313244); border-radius: 6px; padding: 7px 9px; font-size: 12px; resize: none; outline: none; font-family: inherit; line-height: 1.5; min-height: 36px; max-height: 100px; transition: border-color 0.15s; }
+  textarea { flex: 1; background: var(--vscode-input-background, #2a2a3e); color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border, #313244); border-radius: 6px; padding: 7px 9px; font-size: 12px; resize: none; outline: none; font-family: inherit; line-height: 1.5; min-height: 36px; max-height: 150px; transition: border-color 0.15s; }
   textarea:focus { border-color: #1E6FFF; }
   .btn-send { width: 32px; height: 32px; background: #1E6FFF; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   .btn-send:hover { background: #1a5fd0; } .btn-send:disabled { background: #374151; cursor: not-allowed; }
@@ -181,6 +200,21 @@ export function getWebviewContent(): string {
   .welcome { text-align: center; padding: 30px 10px; color: var(--vscode-descriptionForeground, #9ca3af); }
   .welcome .w-icon { font-size: 28px; margin-bottom: 8px; }
   .welcome p { font-size: 12px; line-height: 1.6; }
+  .help-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .help-panel { background: var(--vscode-sideBar-background, #1e1e2e); border: 1px solid #1E6FFF66; border-radius: 12px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .help-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid #1E6FFF22; background: linear-gradient(135deg, #1E6FFF11, transparent); border-radius: 12px 12px 0 0; }
+  .help-header-title { font-size: 12px; font-weight: 700; color: #60a5fa; letter-spacing: 0.3px; }
+  .help-close { background: transparent; border: 1px solid #374151; color: #6b7280; cursor: pointer; font-size: 11px; padding: 3px 8px; border-radius: 4px; transition: all 0.15s; }
+  .help-close:hover { background: #3a1a1a; border-color: #7f1d1d; color: #f87171; }
+  .help-section { padding: 10px 14px; border-bottom: 1px solid var(--vscode-panel-border, #1e1e2e); }
+  .help-section:last-child { border-bottom: none; padding-bottom: 14px; }
+  .help-title { font-size: 9px; font-weight: 700; color: #1E6FFF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+  .help-item { display: grid; grid-template-columns: 88px 1fr; gap: 8px; align-items: start; margin-bottom: 6px; }
+  .help-item:last-child { margin-bottom: 0; }
+  .help-key { font-size: 10px; font-weight: 600; color: #e2e8f0; background: var(--vscode-input-background, #2a2a3e); padding: 2px 6px; border-radius: 4px; border: 1px solid #313244; text-align: center; line-height: 1.6; }
+  .help-desc { font-size: 10px; color: var(--vscode-descriptionForeground, #9ca3af); line-height: 1.7; padding-top: 2px; }
+  .help-tip { font-size: 10px; color: #fbbf24; background: #1c1500; border: 1px solid #92400e44; border-radius: 5px; padding: 5px 10px; margin-bottom: 5px; line-height: 1.6; }
+  .help-tip:last-child { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -199,7 +233,8 @@ export function getWebviewContent(): string {
   </svg>
 </div>
     <span class="logo-text">UstraCode</span>
-    <button class="btn-clear" id="btnClear">🗑 초기화</button>
+    <button class="btn-help" id="btnHelp">? 버튼설명</button>
+    <button class="btn-clear" id="btnClear">🗑 대화창 비우기</button>
   </div>
   <div class="status-row">
     <div class="badge server-err" id="serverBadge"><div class="dot red" id="serverDot"></div><span id="serverText">서버 연결 중...</span></div>
@@ -229,10 +264,40 @@ export function getWebviewContent(): string {
 </div>
 
 <div class="action-row">
-  <button class="btn-action primary" id="btnIndexFile">📂 파일 인덱싱</button>
+  <button class="btn-action" id="btnIndexFile">📂 파일 인덱싱</button>
   <button class="btn-action" id="btnExplain">💡 코드 설명</button>
   <button class="btn-action" id="btnReview">● 코드 리뷰</button>
   <button class="btn-action" id="btnBypassCache" title="캐시를 무시하고 AI에게 직접 질문">🔄 캐시 무시</button>
+</div>
+
+<!-- 헬프 오버레이 -->
+<div class="help-overlay" id="helpOverlay" style="display:none;">
+  <div class="help-panel">
+    <div class="help-header">
+      <span class="help-header-title">📖 UstraCode 기능 안내</span>
+      <button class="help-close" id="helpClose">✕ 닫기</button>
+    </div>
+    <div class="help-section">
+      <div class="help-title">채팅창 버튼</div>
+      <div class="help-item"><span class="help-key">📂 파일 인덱싱</span><span class="help-desc">현재 파일을 AI 검색 대상에 등록</span></div>
+      <div class="help-item"><span class="help-key">💡 코드 설명</span><span class="help-desc">선택한 코드 설명 요청</span></div>
+      <div class="help-item"><span class="help-key">● 코드 리뷰</span><span class="help-desc">코드 품질·개선점 분석 요청</span></div>
+      <div class="help-item"><span class="help-key">🔄 캐시 무시</span><span class="help-desc">캐시 건너뛰고 AI 직접 호출</span></div>
+      <div class="help-item"><span class="help-key">🗑 대화창 비우기</span><span class="help-desc">채팅창 초기화 (서버 기록 유지)</span></div>
+    </div>
+    <div class="help-section">
+      <div class="help-title">CodeLens 버튼 (에디터 인라인)</div>
+      <div class="help-item"><span class="help-key">💬 Explain</span><span class="help-desc">코드 상세 설명</span></div>
+      <div class="help-item"><span class="help-key">✏️ Fix</span><span class="help-desc">선택 영역 문제점 찾아 수정</span></div>
+      <div class="help-item"><span class="help-key">Q Ask</span><span class="help-desc">코드 관련 질문 입력</span></div>
+      <div class="help-item"><span class="help-key">📝 Doc</span><span class="help-desc">선택 영역 주석 자동 생성</span></div>
+    </div>
+    <div class="help-section">
+      <div class="help-title">사용 팁</div>
+      <div class="help-tip">💡 Fix · Doc 사용 시 수정할 코드를 드래그 선택 후 클릭하세요</div>
+      <div class="help-tip">⌨️ Enter: 전송 &nbsp;·&nbsp; Shift+Enter: 줄바꿈</div>
+    </div>
+  </div>
 </div>
 
 <div class="chat-container" id="chatContainer">
@@ -274,7 +339,7 @@ var currentSettings = {
   defaultModel: 'qwen2.5-coder:7b',
   ragEnabled: true
 };
-var bypassCache = false;  // ← 추가
+var bypassCache = false;
 
 window.addEventListener('message', function(e) {
   var msg = e.data;
@@ -286,11 +351,11 @@ window.addEventListener('message', function(e) {
       updateApiKeyBadge(msg.apiKey);
       break;
     case 'setApiKeyStatus':
-    updateTenantStatus(msg.valid, msg.tenantName);
-    if (msg.valid && msg.apiKeys && msg.apiKeys.length > 0) {
+      updateTenantStatus(msg.valid, msg.tenantName);
+      if (msg.valid && msg.apiKeys && msg.apiKeys.length > 0) {
         updateProviderModels(msg.apiKeys, msg.activeProviders);
-    }
-    break;
+      }
+      break;
     case 'setVerifying':
       btnVerify.disabled = msg.value;
       btnVerify.textContent = msg.value ? '검증 중...' : '검증';
@@ -301,7 +366,10 @@ window.addEventListener('message', function(e) {
       btnSend.disabled = msg.value;
       if (msg.loadingText) { loadingText.textContent = msg.loadingText; }
       else { loadingText.textContent = '응답 생성 중...'; }
-      if (msg.value) { chatContainer.scrollTop = chatContainer.scrollHeight; }
+      // 로딩 시작/종료 모두 스크롤 최하단으로
+      setTimeout(function() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 50);
       break;
     case 'clearHistory':
       chatContainer.innerHTML = '';
@@ -309,11 +377,32 @@ window.addEventListener('message', function(e) {
       welcome.style.display = 'block';
       break;
     case 'setInputText':
-        msgInput.value = msg.text;
-        msgInput.style.height = 'auto';
-        msgInput.style.height = Math.min(msgInput.scrollHeight, 100) + 'px';
-        msgInput.focus();
-        break;
+      msgInput.value = msg.text;
+      msgInput.style.height = 'auto';
+      msgInput.style.height = Math.min(msgInput.scrollHeight, 150) + 'px';
+      msgInput.focus();
+      // 커서를 맨 끝으로 이동
+      msgInput.setSelectionRange(msgInput.value.length, msgInput.value.length);
+      msgInput.scrollTop = msgInput.scrollHeight;
+      break;
+
+    // ── CodeLens Apply Actions ──────────────────────────────────────────
+    case 'requestCodeLensAction':
+      var p = document.getElementById('providerSelect').value;
+      var m = document.getElementById('modelSelect').value;
+      // prompt가 비어있으면 전송 안 함 (ask는 setInputText로 처리됨)
+      if (!msg.payload.prompt || msg.payload.prompt.trim() === '') { break; }
+      console.log('[UstraCode] executeCodeLensAction provider=' + p + ' model=' + m);
+      vscode.postMessage({
+        command:    'executeCodeLensAction',
+        prompt:     msg.payload.prompt,
+        label:      msg.payload.label,
+        language:   msg.payload.language,
+        provider:   p,
+        model:      m,
+        allowApply: msg.payload.allowApply,
+      });
+      break;
   }
 });
 
@@ -371,7 +460,6 @@ function updateProviderModels(apiKeys, activeProviders) {
 function updateModelsByProvider(provider, apiKeys) {
     var modelSelect = document.getElementById('modelSelect');
     modelSelect.innerHTML = '';
-    // apiKeys에서 해당 Provider의 모델 찾기
     var matchedKeys = (apiKeys || []).filter(function(k) {
         return k.provider.toUpperCase() === provider && k.active;
     });
@@ -409,7 +497,18 @@ function addMessage(role, content, ragUsed, references, model) {
   }
   div.innerHTML='<div class="msg-label">'+(labelMap[role]||role)+modelLabel+'</div><div class="msg-bubble">'+bubbleContent+'</div>'+footer;
   chatContainer.appendChild(div);
-  chatContainer.scrollTop=chatContainer.scrollHeight;
+    // user 메시지는 버블 상단이 보이도록 스크롤
+    if (cls === 'user') {
+      div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+}
+
+function syncProviderModel() {
+  var provider = document.getElementById('providerSelect').value;
+  var model    = document.getElementById('modelSelect').value;
+  vscode.postMessage({ command: 'syncProviderModel', provider: provider, model: model });
 }
 
 function sendMessage() {
@@ -457,8 +556,22 @@ document.getElementById('btnBypassCache').addEventListener('click', function() {
     btn.style.color = '';
   }
 });
-document.getElementById('providerSelect').addEventListener('change', onProviderChange);
-
+document.getElementById('providerSelect').addEventListener('change', function() {
+  onProviderChange();
+  syncProviderModel();
+});
+document.getElementById('modelSelect').addEventListener('change', syncProviderModel);
+document.getElementById('btnHelp').addEventListener('click', function() {
+  var overlay = document.getElementById('helpOverlay');
+  overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+});
+document.getElementById('helpClose').addEventListener('click', function() {
+  document.getElementById('helpOverlay').style.display = 'none';
+});
+// 오버레이 배경 클릭 시 닫기
+document.getElementById('helpOverlay').addEventListener('click', function(e) {
+  if (e.target === this) { this.style.display = 'none'; }
+});
 // 복사 버튼 — 이벤트 위임
 document.addEventListener('click', function(e) {
   var btn=e.target.closest('.btn-copy');
@@ -472,6 +585,18 @@ document.addEventListener('click', function(e) {
   });
 });
 
+// 코드블록 적용 버튼 — 이벤트 위임
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.btn-apply-code');
+  if (!btn) { return; }
+  var code = decodeURIComponent(btn.getAttribute('data-code'));
+  vscode.postMessage({ command: 'applySelectedCode', code: code });
+  btn.textContent = '✓ 적용됨';
+  btn.style.background = '#1a3a1a';
+  btn.style.color = '#4ade80';
+  btn.style.borderColor = '#166534';
+});
+
 msgInput.addEventListener('keydown', function(e) {
   if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
@@ -480,6 +605,7 @@ msgInput.addEventListener('input', function() {
   msgInput.style.height=Math.min(msgInput.scrollHeight,100)+'px';
 });
 
+syncProviderModel();  
 vscode.postMessage({command:'ready'});
 </script>
 </body>
