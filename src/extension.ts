@@ -6,6 +6,29 @@ import { UstraCodeLensProvider } from './codelens/UstraCodeLensProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('UstraCode 활성화됨');
+	// 활성화 시 버전 체크 (비동기, 실패해도 무관)
+	setTimeout(async () => {
+		const config = vscode.workspace.getConfiguration('ustracode');
+		const serverUrl = config.get<string>('serverUrl', '');
+		const apiKey = config.get<string>('apiKey', '');
+		if (!serverUrl || !apiKey) { return; }
+		try {
+			const res = await fetch(`${serverUrl}/api/extension/version`);
+			if (!res.ok) { return; }
+			const data = await res.json() as { version: string };
+			const ext = vscode.extensions.getExtension('ustracode.ustracode');
+			const currentVersion = ext?.packageJSON?.version ?? '';
+			if (currentVersion && currentVersion !== data.version) {
+				const selected = await vscode.window.showWarningMessage(
+					`UstraCode 업데이트 사용 가능: v${data.version}`,
+					'VSIX 다운로드', '무시'
+				);
+				if (selected === 'VSIX 다운로드') {
+					vscode.env.openExternal(vscode.Uri.parse(`${serverUrl}/api/extension/download`));
+				}
+			}
+		} catch { /* 무시 */ }
+	}, 3000); // 3초 후 체크 (Extension 완전 로드 후)
 
 	// 사이드바 WebView 프로바이더 등록
 	const provider = new ChatViewProvider(context.extensionUri);
@@ -196,6 +219,43 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('ustracode.searchCode', searchCode),
 		vscode.commands.registerCommand('ustracode.openChat', () => {
 			vscode.commands.executeCommand('ustracode.chatView.focus');
+		}),
+		//버전 확인 커맨드
+		vscode.commands.registerCommand('ustracode.checkVersion', async () => {
+			const config = vscode.workspace.getConfiguration('ustracode');
+			const serverUrl = config.get<string>('serverUrl', '');
+			if (!serverUrl) {
+				vscode.window.showWarningMessage('UstraCode: Internal Server URL이 설정되지 않았습니다.');
+				return;
+			}
+			try {
+				const res = await fetch(`${serverUrl}/api/extension/version`);
+				if (!res.ok) { throw new Error('서버 응답 오류'); }
+				const data = await res.json() as { version: string };
+				const serverVersion = data.version;
+
+				// package.json에서 현재 버전 읽기
+				const ext = vscode.extensions.getExtension('ustracode.ustracode');
+				const currentVersion = ext?.packageJSON?.version ?? 'unknown';
+
+				if (currentVersion === serverVersion) {
+					vscode.window.showInformationMessage(
+						`UstraCode v${currentVersion} - 최신 버전입니다.`
+					);
+				} else {
+					const selected = await vscode.window.showWarningMessage(
+						`UstraCode 업데이트 필요: 현재 v${currentVersion} / 서버 v${serverVersion}`,
+						'VSIX 다운로드'
+					);
+					if (selected === 'VSIX 다운로드') {
+						vscode.env.openExternal(
+							vscode.Uri.parse(`${serverUrl}/api/extension/download`)
+						);
+					}
+				}
+			} catch (e) {
+				vscode.window.showErrorMessage('UstraCode: 버전 확인에 실패했습니다. 서버 연결을 확인하세요.');
+			}
 		}),
 		vscode.commands.registerCommand('ustracode.openSettings', () => {
 			vscode.commands.executeCommand(

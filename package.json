@@ -39,6 +39,7 @@
       { "command": "ustracode.searchCode", "title": "UstraCode: Search Code" },
       { "command": "ustracode.openChat", "title": "UstraCode: Open Chat", "icon": "$(comment-discussion)" },
       { "command": "ustracode.openSettings", "title": "UstraCode: Open Settings", "icon": "$(settings-gear)" },
+      { "command": "ustracode.checkVersion", "title": "UstraCode: 버전 확인", "icon": "$(versions)" },
       { "command": "ustracode.codeLens.explain", "title": "UstraCode: Explain Code" },
       { "command": "ustracode.codeLens.fix",     "title": "UstraCode: Fix / Refactor Code" },
       { "command": "ustracode.codeLens.ask",     "title": "UstraCode: Ask AI about Code" },
@@ -54,7 +55,8 @@
       ],
       "view/title": [
         { "command": "ustracode.indexCurrentFile", "when": "view == ustracode.chatView", "group": "navigation" },
-        { "command": "ustracode.openSettings", "when": "view == ustracode.chatView", "group": "navigation" }
+        { "command": "ustracode.openSettings", "when": "view == ustracode.chatView", "group": "navigation" },
+        { "command": "ustracode.checkVersion", "when": "view == ustracode.chatView", "group": "navigation" }
       ]
     }
   },
