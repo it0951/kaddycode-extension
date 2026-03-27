@@ -66,9 +66,13 @@ export function activate(context: vscode.ExtensionContext) {
 		fix: {
 			label: '✏️ 코드 수정/리팩토링',
 			buildPrompt: (lang, code, fullFileContent?) =>
-				`다음은 전체 파일 내용입니다:\n\`\`\`${lang}\n${fullFileContent || code}\n\`\`\`\n\n` +
-				`위 파일에서 아래 메서드/함수의 문제점을 찾아 개선해주세요.\n` +
-				`반드시 해당 메서드/함수 코드만 반환하고, import문이나 클래스 선언은 포함하지 마세요:\n\`\`\`${lang}\n${code}\n\`\`\``,
+				`다음은 전체 파일 내용입니다 (컨텍스트 참고용):\n\`\`\`${lang}\n${fullFileContent || code}\n\`\`\`\n\n` +
+				`위 파일에서 아래 선택된 코드의 문제점을 찾아 수정해주세요.\n` +
+				`[중요 규칙]\n` +
+				`- 아래 선택된 코드 블록만 수정하여 반환하세요\n` +
+				`- 선택 범위 밖의 코드(어노테이션, 클래스 선언, import 등)는 절대 포함하지 마세요\n` +
+				`- 응답은 수정된 코드 블록 하나만 반환하세요 (설명은 코드 블록 밖에 작성)\n` +
+				`[선택된 코드]\n\`\`\`${lang}\n${code}\n\`\`\``,
 		},
 		ask: {
 			label: 'Q AI에게 질문',
@@ -79,9 +83,13 @@ export function activate(context: vscode.ExtensionContext) {
 		doc: {
 			label: '📝 주석 생성',
 			buildPrompt: (lang, code, fullFileContent?) =>
-				`다음은 전체 파일 내용입니다:\n\`\`\`${lang}\n${fullFileContent || code}\n\`\`\`\n\n` +
-				`위 파일에서 아래 메서드/함수에 적절한 주석(JavaDoc/JSDoc/docstring 등 언어에 맞는 형식)을 추가해주세요.\n` +
-				`반드시 해당 메서드/함수 코드만 반환하고, import문이나 클래스 선언은 포함하지 마세요:\n\`\`\`${lang}\n${code}\n\`\`\``,
+				`다음은 전체 파일 내용입니다 (컨텍스트 참고용):\n\`\`\`${lang}\n${fullFileContent || code}\n\`\`\`\n\n` +
+				`위 파일에서 아래 선택된 코드에 주석(JavaDoc/JSDoc/docstring 등 언어에 맞는 형식)을 추가해주세요.\n` +
+				`[중요 규칙]\n` +
+				`- 아래 선택된 코드 블록에만 주석을 추가하여 반환하세요\n` +
+				`- 선택 범위 밖의 코드(어노테이션, 클래스 선언, import 등)는 절대 포함하지 마세요\n` +
+				`- 응답은 주석이 추가된 코드 블록 하나만 반환하세요\n` +
+				`[선택된 코드]\n\`\`\`${lang}\n${code}\n\`\`\``,
 		},
 	};
 
@@ -118,7 +126,30 @@ export function activate(context: vscode.ExtensionContext) {
 
 					// 4. Fix/Doc 액션이면 "적용 가능한 응답" 플래그 포함하여 전송
 					const isApplicable = actionKey === 'fix' || actionKey === 'doc';
-					const prompt = actionDef.buildPrompt(language, code, fullFileContent);
+
+					// 선택 영역 기반 코드 추출 (Fix/Doc)
+					// 드래그 선택이 있으면 선택 영역, 없으면 현재 라인
+					let selectedRange: vscode.Range | undefined;
+					let selectedCode = code; // 기본값: 블록 추출 코드
+
+					if (isApplicable) {
+						const sel = editor.selection;
+						if (!sel.isEmpty) {
+							// 드래그 선택 영역 사용
+							selectedRange = new vscode.Range(sel.start, sel.end);
+							selectedCode = editor.document.getText(selectedRange);
+						} else {
+							// 선택 없으면 현재 라인 단일 사용
+							const lineRange = editor.document.lineAt(range.start.line).range;
+							selectedRange = lineRange;
+							selectedCode = editor.document.lineAt(range.start.line).text;
+						}
+					}
+
+					// Fix/Doc은 선택 코드 기반으로 프롬프트 재구성
+					const prompt = isApplicable
+						? actionDef.buildPrompt(language, selectedCode, fullFileContent)
+						: actionDef.buildPrompt(language, code, fullFileContent);
 
 					// ask는 input창에 세팅 후 사용자가 직접 전송
 					if (actionKey === 'ask' && actionDef.inputPreset) {
@@ -132,11 +163,9 @@ export function activate(context: vscode.ExtensionContext) {
 						label: actionDef.label,
 						prompt,
 						language,
-						originalCode: code,
+						originalCode: isApplicable ? selectedCode : code,
 						allowApply: isApplicable,
-						applyRange: isApplicable
-							? getCodeBlockRange(editor.document, range.start.line)
-							: undefined,
+						applyRange: isApplicable ? selectedRange : undefined,
 					});
 				}
 			)

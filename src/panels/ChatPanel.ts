@@ -19,11 +19,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _chatHistory: { role: string; content: string }[] = [];
 
-    // CodeLens fix/doc 응답 대기 상태 저장
-    private _pendingApply?: {
-        applyRange: vscode.Range;
-        lastAssistantMessage: string;
-    };
     private _currentProvider: string = '';
     private _currentModel: string = '';
 
@@ -53,7 +48,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'clearHistory':
                     this._chatHistory = [];
-                    this._pendingApply = undefined;
                     this._postMessage({ command: 'clearHistory' });
                     break;
                 case 'ready':
@@ -67,11 +61,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     vscode.commands.executeCommand(
                         'workbench.action.openSettings', 'ustracode'
                     );
-                    break;
-
-                // ── CodeLens 적용 버튼 이벤트 ───────────────────────────
-                case 'applySelectedCode':
-                    await this._handleApplySelectedCode(message.code);
                     break;
                 case 'syncProviderModel':
                     this._currentProvider = message.provider || '';
@@ -87,7 +76,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         message.prompt,
                         message.provider,
                         message.model,
-                        true,            // ← CodeLens는 항상 캐시 무시
+                        true,
                         {
                             allowApply: message.allowApply,
                             applyRange: this._pendingApplyRange,
@@ -117,7 +106,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         if (!text.trim()) { return; }
 
         this._chatHistory.push({ role: 'user', content: text });
-        this._postMessage({ command: 'addMessage', role: 'user', content: text });
+
+        // YOU 버블 표시용 — 전체 프롬프트 대신 핵심만 표시
+        let displayText = text;
+        if (codeLensOpts?.allowApply) {
+            // Fix/Doc: 선택 코드만 표시 (전체 파일 컨텍스트, 프롬프트 지시문 제거)
+            const selCodeMatch = text.match(/\[선택된 코드\]\n```[\s\S]*?```/);
+            displayText = selCodeMatch ? selCodeMatch[0] : text;
+        } else if (!codeLensOpts) {
+            // 일반 채팅: [선택된 코드] + [질문] 구조면 질문만 표시
+            const questionMatch = text.match(/\[질문\]\n([\s\S]+)$/);
+            if (questionMatch) {
+                displayText = questionMatch[1].trim();
+            }
+        }
+        this._postMessage({ command: 'addMessage', role: 'user', content: displayText });
+
         this._postMessage({ command: 'setLoading', value: true });
 
         try {
@@ -156,14 +160,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 model:      chatResponse.model,
             });
 
-            // Fix/Doc 응답 → [✅ 소스에 적용] 버튼 표시
+            // Fix/Doc 응답 → diff 미리보기 (참고용)
             if (codeLensOpts?.allowApply && codeLensOpts.applyRange) {
-                this._pendingApplyRange = codeLensOpts.applyRange;
+                const editor = vscode.window.activeTextEditor;
+                const originalCode = editor
+                    ? editor.document.getText(codeLensOpts.applyRange)
+                    : '';
+                const extractedCode = extractCodeFromMarkdown(assistantMsg);
+                if (extractedCode && originalCode) {
+                    this._postMessage({
+                        command:      'showDiffPreview',
+                        originalCode: originalCode,
+                        newCode:      extractedCode,
+                    });
+                }
             }
 
         } catch (error: any) {
             // 오류 시 pending apply 초기화 (이전 Fix 요청 잔재 제거)
-            this._pendingApply = undefined;
             this._postMessage({
                 command: 'addMessage',
                 role:    'error',
@@ -171,41 +185,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             });
         } finally {
             this._postMessage({ command: 'setLoading', value: false });
-        }
-    }
-
-    /**
-     * AI 응답에서 코드 블록 추출 후 에디터 해당 범위 교체
-     */
-    private async _handleApplySelectedCode(code: string) {
-        if (!code || !code.trim()) {
-            vscode.window.showWarningMessage('적용할 코드가 없습니다.');
-            return;
-        }
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showWarningMessage('활성화된 에디터가 없습니다.');
-            return;
-        }
-        if (!this._pendingApplyRange) {
-            vscode.window.showWarningMessage('적용 범위를 찾을 수 없습니다. Fix 버튼을 다시 클릭해주세요.');
-            return;
-        }
-
-        const workspaceEdit = new vscode.WorkspaceEdit();
-        workspaceEdit.replace(editor.document.uri, this._pendingApplyRange, code);
-        const success = await vscode.workspace.applyEdit(workspaceEdit);
-
-        if (success) {
-            this._pendingApplyRange = undefined;
-            this._postMessage({
-                command: 'addMessage',
-                role:    'system',
-                content: '✅ 코드가 에디터에 적용되었습니다.',
-            });
-            vscode.window.showInformationMessage('UstraCode: 코드가 적용되었습니다.');
-        } else {
-            vscode.window.showErrorMessage('코드 적용 실패. 에디터 상태를 확인해주세요.');
         }
     }
 
@@ -281,6 +260,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    // applyRange 임시 보관 (sendCodeLensAction → executeCodeLensAction 간 전달)
+    private _pendingApplyRange?: vscode.Range;
+
     /** 기존 우클릭 → 채팅창 전송 */
     public sendCodeToChat(message: string) {
         this._postMessage({ command: 'setInputText', text: message });
@@ -291,8 +273,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
      * Fix/Doc인 경우 응답 후 [✅ 소스에 적용] 버튼 표시
      */
     public sendCodeLensAction(payload: CodeLensActionPayload) {
-        // 이전 pendingApply 초기화
-        this._pendingApply = undefined;
 
         // WebView에 codeLens 액션 페이로드를 전달하고
         // WebView가 현재 선택된 provider/model을 포함해서 응답하도록 요청
@@ -305,18 +285,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 language:     payload.language,
                 originalCode: payload.originalCode,
                 allowApply:   payload.allowApply,
-                // applyRange은 직렬화 불가 → 별도 보관
             }
         });
 
-        // applyRange는 WebView에 못 보내므로 여기서 임시 보관
         if (payload.allowApply && payload.applyRange) {
             this._pendingApplyRange = payload.applyRange;
         }
     }
-
-    // applyRange 임시 보관용 필드 (sendCodeLensAction → executeCodeLensAction 간 전달)
-    private _pendingApplyRange?: vscode.Range;
 }
 
 // ── 헬퍼: AI 응답에서 코드 블록 추출 ─────────────────────────────────────
