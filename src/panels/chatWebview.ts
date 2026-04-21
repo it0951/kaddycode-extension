@@ -89,7 +89,7 @@ export function getWebviewContent(): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>UstraCode</title>
+<title>KaddyCode</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -222,17 +222,15 @@ export function getWebviewContent(): string {
 <div class="header">
   <div class="logo-row">
     <div class="logo-badge">
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 34 34">
-    <g transform="translate(-234.051 -243.552)">
-      <circle cx="17" cy="17" r="17" transform="translate(234.051 243.552)" fill="#0354ff"/>
-      <g transform="translate(242.64 251.376)">
-        <path d="M279.06,278.113H276v5.352a3.823,3.823,0,0,1-7.646,0V274.29L265.3,272v11.469a6.847,6.847,0,0,0,1.16,3.823,6.881,6.881,0,0,0,12.6-3.823Z" transform="translate(-265.297 -271.996)" fill="#fff"/>
-        <circle cx="1.529" cy="1.529" r="1.529" transform="translate(13.763 15.292)" fill="#fff"/>
-      </g>
-    </g>
-  </svg>
-</div>
-    <span class="logo-text">UstraCode</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="11" stroke="#0354ff" stroke-width="1.5" fill="#0354ff"/>
+          <line x1="8" y1="6.5" x2="8" y2="17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="12" x2="16" y2="6.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="8" y1="12" x2="16" y2="17.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="16" cy="6.5" r="1.2" fill="white"/>
+        </svg>
+    </div>
+    <span class="logo-text">KaddyCode</span>
     <button class="btn-help" id="btnHelp">? 버튼설명</button>
     <button class="btn-clear" id="btnClear">🗑 대화창 비우기</button>
   </div>
@@ -274,7 +272,7 @@ export function getWebviewContent(): string {
 <div class="help-overlay" id="helpOverlay" style="display:none;">
   <div class="help-panel">
     <div class="help-header">
-      <span class="help-header-title">📖 UstraCode 기능 안내</span>
+      <span class="help-header-title">📖 KaddyCode 기능 안내</span>
       <button class="help-close" id="helpClose">✕ 닫기</button>
     </div>
     <div class="help-section">
@@ -303,7 +301,7 @@ export function getWebviewContent(): string {
 <div class="chat-container" id="chatContainer">
   <div class="welcome" id="welcome">
     <div class="w-icon">⚡</div>
-    <p>UstraCode AI 어시스턴트<br/>코드를 선택하거나 질문을 입력하세요</p>
+    <p>KaddyCode AI 어시스턴트<br/>코드를 선택하거나 질문을 입력하세요</p>
   </div>
 </div>
 
@@ -394,7 +392,7 @@ window.addEventListener('message', function(e) {
       var m = document.getElementById('modelSelect').value;
       // prompt가 비어있으면 전송 안 함 (ask는 setInputText로 처리됨)
       if (!msg.payload.prompt || msg.payload.prompt.trim() === '') { break; }
-      console.log('[UstraCode] executeCodeLensAction provider=' + p + ' model=' + m);
+      console.log('[KaddyCode] executeCodeLensAction provider=' + p + ' model=' + m);
       vscode.postMessage({
         command:    'executeCodeLensAction',
         prompt:     msg.payload.prompt,
@@ -481,7 +479,7 @@ function addMessage(role, content, ragUsed, references, model) {
   if (welcome) { welcome.style.display='none'; }
   var div=document.createElement('div');
   var roleMap={user:'user',assistant:'ai',error:'err',system:'sys'};
-  var labelMap={user:'You',assistant:'UstraCode AI',error:'Error',system:'System'};
+  var labelMap={user:'You',assistant:'KaddyCode AI',error:'Error',system:'System'};
   var cls=roleMap[role]||'sys';
   div.className='msg '+cls;
   var isCached=model&&(model.indexOf('[캐시]')>=0||model.indexOf('[유사질문 캐시]')>=0);

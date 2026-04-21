@@ -1,14 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
     <!-- 원형 테두리 -->
     <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.5" fill="none"/>
-    <!-- U 왼쪽 얇은 기둥 + 하단 곡선 + 오른쪽 두꺼운 기둥 -->
-    <path
-            d="M7 6.5v7a5 5 0 0 0 10 0v-7"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            fill="none"
-    />
-    <!-- 오른쪽 기둥 끝 점 (ustra.io 스타일) -->
-    <circle cx="17" cy="6.5" r="1.2" fill="currentColor"/>
+    <!-- K 왼쪽 세로 기둥 -->
+    <line x1="8" y1="6.5" x2="8" y2="17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- K 위쪽 대각선 -->
+    <line x1="8" y1="12" x2="16" y2="6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- K 아래쪽 대각선 -->
+    <line x1="8" y1="12" x2="16" y2="17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- 오른쪽 끝 점 (KaddyCode 스타일) -->
+    <circle cx="16" cy="6.5" r="1.2" fill="currentColor"/>
 </svg>

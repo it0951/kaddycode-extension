@@ -77,9 +77,9 @@ export interface TenantInfo {
 // ── 설정 읽기 헬퍼 ─────────────────────────────────────────────────────────
 
 function getConfig() {
-    const cfg = vscode.workspace.getConfiguration('ustracode');
+    const cfg = vscode.workspace.getConfiguration('kaddycode');
     return {
-        serverUrl:       cfg.get<string>('serverUrl', 'http://localhost:8081'),
+        serverUrl:       cfg.get<string>('serverUrl', 'http://localhost:8082'),
         email:           cfg.get<string>('email', ''),           // ← 추가
         apiKey:          cfg.get<string>('apiKey', ''),
         userId:          cfg.get<string>('userId', ''),

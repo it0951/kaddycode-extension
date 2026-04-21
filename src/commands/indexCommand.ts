@@ -51,8 +51,8 @@ export async function searchCode() {
         }
 
         const panel = vscode.window.createWebviewPanel(
-            'ustracode-search',
-            'UstraCode 코드 검색',
+            'kaddycode-search',
+            'KaddyCode 코드 검색',
             vscode.ViewColumn.Beside,
             {}
         );

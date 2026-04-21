@@ -15,7 +15,7 @@ export interface CodeLensActionPayload {
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
 
-    public static readonly viewType = 'ustracode.chatView';
+    public static readonly viewType = 'kaddycode.chatView';
     private _view?: vscode.WebviewView;
     private _chatHistory: { role: string; content: string }[] = [];
 
@@ -59,7 +59,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'openSettings':
                     vscode.commands.executeCommand(
-                        'workbench.action.openSettings', 'ustracode'
+                        'workbench.action.openSettings', 'kaddycode'
                     );
                     break;
                 case 'syncProviderModel':
@@ -88,7 +88,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
 
         vscode.workspace.onDidChangeConfiguration(async (e) => {
-            if (e.affectsConfiguration('ustracode')) {
+            if (e.affectsConfiguration('kaddycode')) {
                 await this._sendCurrentSettings();
                 await this._checkServerHealth();
             }

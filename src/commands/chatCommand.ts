@@ -3,7 +3,7 @@ import { internalClient } from '../api/internalClient';
 
 export async function chatCommand() {
     const userMessage = await vscode.window.showInputBox({
-        prompt: 'UstraCode에게 질문하세요',
+        prompt: 'KaddyCode에게 질문하세요',
         placeHolder: '예: 이 코드를 설명해줘',
     });
 
@@ -14,7 +14,7 @@ export async function chatCommand() {
     await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,
-            title: 'UstraCode 응답 생성 중...',
+            title: 'KaddyCode 응답 생성 중...',
             cancellable: false,
         },
         async () => {
@@ -26,8 +26,8 @@ export async function chatCommand() {
                 });
 
                 const panel = vscode.window.createWebviewPanel(
-                    'ustracode-chat',
-                    'UstraCode Chat',
+                    'kaddycode-chat',
+                    'KaddyCode Chat',
                     vscode.ViewColumn.Beside,
                     {}
                 );
@@ -38,7 +38,7 @@ export async function chatCommand() {
           <body style="font-family: sans-serif; padding: 20px;">
             <h3>💬 질문</h3>
             <p>${userMessage}</p>
-            <h3>🤖 UstraCode 답변</h3>
+            <h3>🤖 KaddyCode 답변</h3>
             <pre style="white-space: pre-wrap;">${response.message}</pre>
             <small>모델: ${response.model} | ${response.createdAt}</small>
           </body>

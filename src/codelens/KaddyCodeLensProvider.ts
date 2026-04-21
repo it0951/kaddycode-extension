@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
  * 함수/클래스/메서드 선언부 위에 CodeLens 버튼을 표시하는 Provider.
  * 표시 대상: function, class, method, interface, enum, arrow function 변수
  */
-export class UstraCodeLensProvider implements vscode.CodeLensProvider {
+export class KaddyCodeLensProvider implements vscode.CodeLensProvider {
 
     private _onDidChangeCodeLenses = new vscode.EventEmitter<void>();
     readonly onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
@@ -18,7 +18,7 @@ export class UstraCodeLensProvider implements vscode.CodeLensProvider {
         document: vscode.TextDocument,
         _token: vscode.CancellationToken
     ): vscode.CodeLens[] {
-        const config = vscode.workspace.getConfiguration('ustracode');
+        const config = vscode.workspace.getConfiguration('kaddycode');
         const apiKey = config.get<string>('apiKey', '');
 
         // API Key 미설정 시 CodeLens 미표시
@@ -37,7 +37,7 @@ export class UstraCodeLensProvider implements vscode.CodeLensProvider {
             const range = new vscode.Range(i, 0, i, line.length);
 
             // 로고 + 브랜드 텍스트 (클릭 시 채팅창 포커스)
-            codeLenses.push(makeCodeLens(range, 'open', 'U| UstraCode'));
+            codeLenses.push(makeCodeLens(range, 'open', 'U| KaddyCode'));
             // 구분자
             codeLenses.push(makeCodeLens(range, 'noop', '·'));
             // 4개 버튼
@@ -60,7 +60,7 @@ function makeCodeLens(
 ): vscode.CodeLens {
     return new vscode.CodeLens(range, {
         title: label,
-        command: `ustracode.codeLens.${action}`,
+        command: `kaddycode.codeLens.${action}`,
         arguments: [range],
     });
 }

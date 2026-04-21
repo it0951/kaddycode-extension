@@ -1,32 +1,32 @@
 {
-  "name": "ustracode-extension",
-  "displayName": "UstraCode",
+  "name": "kaddycode-extension",
+  "displayName": "KaddyCode",
   "description": "AI-powered coding assistant for enterprise",
   "version": "0.1.0",
-  "publisher": "ustracode",
+  "publisher": "kaddycode",
   "engines": { "vscode": "^1.110.0" },
   "categories": ["Other"],
   "main": "./out/extension.js",
   "activationEvents": ["*"],
   "contributes": {
     "viewsContainers": {
-      "activitybar": [{ "id": "ustracode-sidebar", "title": "UstraCode", "icon": "resources/icon.svg" }]
+      "activitybar": [{ "id": "kaddycode-sidebar", "title": "KaddyCode", "icon": "resources/icon.svg" }]
     },
     "views": {
-      "ustracode-sidebar": [{ "type": "webview", "id": "ustracode.chatView", "name": "AI Chat" }]
+      "kaddycode-sidebar": [{ "type": "webview", "id": "kaddycode.chatView", "name": "AI Chat" }]
     },
     "configuration": {
-      "title": "UstraCode",
+      "title": "KaddyCode",
       "properties": {
-        "ustracode.serverUrl": { "type": "string", "default": "http://localhost:8081", "description": "UstraCode Internal Server URL" },
-        "ustracode.email": { "type": "string", "default": "", "description": "Tenant email address" },
-        "ustracode.apiKey": { "type": "string", "default": "", "description": "Tenant API Key" },
-        "ustracode.userId": { "type": "string", "default": "", "description": "User ID" },
-        "ustracode.defaultProvider": { "type": "string", "default": "ollama", "enum": ["ollama","openai","claude","gemini"], "description": "Default AI provider" },
-        "ustracode.defaultModel": { "type": "string", "default": "qwen2.5-coder:14b", "description": "Default AI model" },
-        "ustracode.ragEnabled": { "type": "boolean", "default": true, "description": "Enable RAG context" },
-        "ustracode.autoIndexOnSave": { "type": "boolean", "default": false, "description": "Auto index on save" },
-        "ustracode.codeLensEnabled": {
+        "kaddycode.serverUrl": { "type": "string", "default": "http://localhost:8082", "description": "KaddyCode Internal Server URL" },
+        "kaddycode.email": { "type": "string", "default": "", "description": "Tenant email address" },
+        "kaddycode.apiKey": { "type": "string", "default": "", "description": "Tenant API Key" },
+        "kaddycode.userId": { "type": "string", "default": "", "description": "User ID" },
+        "kaddycode.defaultProvider": { "type": "string", "default": "ollama", "enum": ["ollama","openai","claude","gemini"], "description": "Default AI provider" },
+        "kaddycode.defaultModel": { "type": "string", "default": "qwen2.5-coder:14b", "description": "Default AI model" },
+        "kaddycode.ragEnabled": { "type": "boolean", "default": true, "description": "Enable RAG context" },
+        "kaddycode.autoIndexOnSave": { "type": "boolean", "default": false, "description": "Auto index on save" },
+        "kaddycode.codeLensEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable CodeLens buttons on functions and classes"
@@ -34,29 +34,29 @@
       }
     },
     "commands": [
-      { "command": "ustracode.chat", "title": "UstraCode: Ask AI" },
-      { "command": "ustracode.indexCurrentFile", "title": "UstraCode: Index Current File" },
-      { "command": "ustracode.searchCode", "title": "UstraCode: Search Code" },
-      { "command": "ustracode.openChat", "title": "UstraCode: Open Chat", "icon": "$(comment-discussion)" },
-      { "command": "ustracode.openSettings", "title": "UstraCode: Open Settings", "icon": "$(settings-gear)" },
-      { "command": "ustracode.checkVersion", "title": "UstraCode: 버전 확인", "icon": "$(versions)" },
-      { "command": "ustracode.codeLens.explain", "title": "UstraCode: Explain Code" },
-      { "command": "ustracode.codeLens.fix",     "title": "UstraCode: Fix / Refactor Code" },
-      { "command": "ustracode.codeLens.ask",     "title": "UstraCode: Ask AI about Code" },
-      { "command": "ustracode.codeLens.doc",     "title": "UstraCode: Generate Documentation" },
-      { "command": "ustracode.codeLens.open", "title": "UstraCode: Open Chat" },
-      { "command": "ustracode.codeLens.noop", "title": "UstraCode: Separator" }
+      { "command": "kaddycode.chat", "title": "KaddyCode: Ask AI" },
+      { "command": "kaddycode.indexCurrentFile", "title": "KaddyCode: Index Current File" },
+      { "command": "kaddycode.searchCode", "title": "KaddyCode: Search Code" },
+      { "command": "kaddycode.openChat", "title": "KaddyCode: Open Chat", "icon": "$(comment-discussion)" },
+      { "command": "kaddycode.openSettings", "title": "KaddyCode: Open Settings", "icon": "$(settings-gear)" },
+      { "command": "kaddycode.checkVersion", "title": "KaddyCode: 버전 확인", "icon": "$(versions)" },
+      { "command": "kaddycode.codeLens.explain", "title": "KaddyCode: Explain Code" },
+      { "command": "kaddycode.codeLens.fix",     "title": "KaddyCode: Fix / Refactor Code" },
+      { "command": "kaddycode.codeLens.ask",     "title": "KaddyCode: Ask AI about Code" },
+      { "command": "kaddycode.codeLens.doc",     "title": "KaddyCode: Generate Documentation" },
+      { "command": "kaddycode.codeLens.open", "title": "KaddyCode: Open Chat" },
+      { "command": "kaddycode.codeLens.noop", "title": "KaddyCode: Separator" }
     ],
     "menus": {
       "editor/context": [
-        { "command": "ustracode.chat", "group": "ustracode@1" },
-        { "command": "ustracode.indexCurrentFile", "group": "ustracode@2" },
-        { "command": "ustracode.searchCode", "group": "ustracode@3" }
+        { "command": "kaddycode.chat", "group": "kaddycode@1" },
+        { "command": "kaddycode.indexCurrentFile", "group": "kaddycode@2" },
+        { "command": "kaddycode.searchCode", "group": "kaddycode@3" }
       ],
       "view/title": [
-        { "command": "ustracode.indexCurrentFile", "when": "view == ustracode.chatView", "group": "navigation" },
-        { "command": "ustracode.openSettings", "when": "view == ustracode.chatView", "group": "navigation" },
-        { "command": "ustracode.checkVersion", "when": "view == ustracode.chatView", "group": "navigation" }
+        { "command": "kaddycode.indexCurrentFile", "when": "view == kaddycode.chatView", "group": "navigation" },
+        { "command": "kaddycode.openSettings", "when": "view == kaddycode.chatView", "group": "navigation" },
+        { "command": "kaddycode.checkVersion", "when": "view == kaddycode.chatView", "group": "navigation" }
       ]
     }
   },
