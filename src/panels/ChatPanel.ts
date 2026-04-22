@@ -39,10 +39,41 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = getWebviewContent();
 
         webviewView.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'sendMessage':
-                    await this._handleChat(message.text, message.provider, message.model, message.bypassCache);
+            switch (message.command) {case 'sendMessage':
+                await this._handleChat(message.text, message.provider, message.model, message.bypassCache);
+                break;
+
+                // 신규 추가 — btnExplain 클릭 시 에디터 선택 코드 포함
+                case 'explainSelected': {
+                    const editor = vscode.window.activeTextEditor;
+                    const selectedCode = (editor && !editor.selection.isEmpty)
+                        ? editor.document.getText(editor.selection)
+                        : '';
+                    const fileName = editor
+                        ? (editor.document.fileName.split(/[\\/]/).pop() ?? '')
+                        : '';
+                    const fullText = selectedCode
+                        ? `선택한 코드를 상세히 설명해주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor?.document.languageId ?? ''}\n${selectedCode}\n\`\`\``
+                        : '선택한 코드를 상세히 설명해주세요. (선택된 코드가 없습니다)';
+                    await this._handleChat(fullText, message.provider, message.model, message.bypassCache);
                     break;
+                }
+                // 신규 추가 — btnReview 클릭 시 에디터 선택 코드 포함
+                case 'reviewSelected': {
+                    const editor = vscode.window.activeTextEditor;
+                    const selectedCode = (editor && !editor.selection.isEmpty)
+                        ? editor.document.getText(editor.selection)
+                        : '';
+                    const fileName = editor
+                        ? (editor.document.fileName.split(/[\\/]/).pop() ?? '')
+                        : '';
+                    const fullText = selectedCode
+                        ? `선택한 코드를 리뷰하고 개선 사항을 알려주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor?.document.languageId ?? ''}\n${selectedCode}\n\`\`\``
+                        : '선택한 코드를 리뷰하고 개선 사항을 알려주세요. (선택된 코드가 없습니다)';
+                    await this._handleChat(fullText, message.provider, message.model, message.bypassCache);
+                    break;
+                }
+
                 case 'indexFile':
                     await this._handleIndexFile();
                     break;
