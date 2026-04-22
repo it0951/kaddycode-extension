@@ -591,11 +591,11 @@ document.getElementById('btnSend').addEventListener('click', sendMessage);
 document.getElementById('btnIndexFile').addEventListener('click', function(){ vscode.postMessage({command:'indexFile'}); });
 document.getElementById('btnExplain').addEventListener('click', function(){
   var provider=document.getElementById('providerSelect').value, model=document.getElementById('modelSelect').value;
-  vscode.postMessage({command:'sendMessage',text:'선택한 코드를 상세히 설명해주세요.',provider:provider,model:model});
+  vscode.postMessage({command:'sendMessage',text:'선택한 코드를 상세히 설명해주세요.',provider:provider,model:model,bypassCache:bypassCache});
 });
 document.getElementById('btnReview').addEventListener('click', function(){
   var provider=document.getElementById('providerSelect').value, model=document.getElementById('modelSelect').value;
-  vscode.postMessage({command:'sendMessage',text:'선택한 코드를 리뷰하고 개선 사항을 알려주세요.',provider:provider,model:model});
+  vscode.postMessage({command:'sendMessage',text:'선택한 코드를 리뷰하고 개선 사항을 알려주세요.',provider:provider,model:model,bypassCache:bypassCache});
 });
 document.getElementById('btnBypassCache').addEventListener('click', function() {
   bypassCache = !bypassCache;
