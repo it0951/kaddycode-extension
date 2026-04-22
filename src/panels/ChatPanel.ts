@@ -46,30 +46,32 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 // 신규 추가 — btnExplain 클릭 시 에디터 선택 코드 포함
                 case 'explainSelected': {
                     const editor = vscode.window.activeTextEditor;
-                    const selectedCode = (editor && !editor.selection.isEmpty)
+                    if (!editor) {
+                        this._postMessage({ command: 'addMessage', role: 'system', content: '⚠️ 열린 파일이 없습니다.' });
+                        break;
+                    }
+                    const fileName = editor.document.fileName.split(/[\\/]/).pop() ?? '';
+                    // 선택 영역 있으면 선택 코드, 없으면 파일 전체
+                    const code = !editor.selection.isEmpty
                         ? editor.document.getText(editor.selection)
-                        : '';
-                    const fileName = editor
-                        ? (editor.document.fileName.split(/[\\/]/).pop() ?? '')
-                        : '';
-                    const fullText = selectedCode
-                        ? `선택한 코드를 상세히 설명해주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor?.document.languageId ?? ''}\n${selectedCode}\n\`\`\``
-                        : '선택한 코드를 상세히 설명해주세요. (선택된 코드가 없습니다)';
+                        : editor.document.getText();
+                    const fullText = `다음 코드를 상세히 설명해주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor.document.languageId}\n${code}\n\`\`\``;
                     await this._handleChat(fullText, message.provider, message.model, message.bypassCache);
                     break;
                 }
                 // 신규 추가 — btnReview 클릭 시 에디터 선택 코드 포함
                 case 'reviewSelected': {
                     const editor = vscode.window.activeTextEditor;
-                    const selectedCode = (editor && !editor.selection.isEmpty)
+                    if (!editor) {
+                        this._postMessage({ command: 'addMessage', role: 'system', content: '⚠️ 열린 파일이 없습니다.' });
+                        break;
+                    }
+                    const fileName = editor.document.fileName.split(/[\\/]/).pop() ?? '';
+                    // 선택 영역 있으면 선택 코드, 없으면 파일 전체
+                    const code = !editor.selection.isEmpty
                         ? editor.document.getText(editor.selection)
-                        : '';
-                    const fileName = editor
-                        ? (editor.document.fileName.split(/[\\/]/).pop() ?? '')
-                        : '';
-                    const fullText = selectedCode
-                        ? `선택한 코드를 리뷰하고 개선 사항을 알려주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor?.document.languageId ?? ''}\n${selectedCode}\n\`\`\``
-                        : '선택한 코드를 리뷰하고 개선 사항을 알려주세요. (선택된 코드가 없습니다)';
+                        : editor.document.getText();
+                    const fullText = `다음 코드를 리뷰하고 개선 사항을 알려주세요.\n\n[파일: ${fileName}]\n\`\`\`${editor.document.languageId}\n${code}\n\`\`\``;
                     await this._handleChat(fullText, message.provider, message.model, message.bypassCache);
                     break;
                 }
